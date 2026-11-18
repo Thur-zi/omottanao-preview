@@ -223,8 +223,9 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
       </m.div>
 
       <div ref={palco} className="absolute inset-0">
-        <m.div style={{ y: yFoto, scale: escalaFoto }} className="absolute inset-0 grid place-items-center pb-[10svh] md:pb-[4svh]">
-          <div ref={foto} className="relative aspect-square w-[min(112vw,78svh)]">
+        <m.div style={{ y: yFoto, scale: escalaFoto }} className="absolute inset-0">
+          {/* centralizado por posição absoluta: em telas estreitas a foto é mais larga que a tela e precisa vazar igual dos dois lados */}
+          <div ref={foto} className="absolute left-1/2 top-[45%] aspect-square w-[min(112vw,78svh)] -translate-x-1/2 -translate-y-1/2 md:top-[48%]">
             <m.img
               src={`${BASE}motta-760.webp`}
               srcSet={`${BASE}motta-760.webp 760w, ${BASE}motta-1400.webp 1400w`}
