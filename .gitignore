@@ -1,1 +1,4 @@
-DECISOES.md
+node_modules
+dist
+*.log
+.env*

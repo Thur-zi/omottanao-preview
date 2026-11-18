@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    font-synthesis: none;
+  }
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+  /* Durante a abertura a página fica presa no topo */
+  html.travado,
+  html.travado body {
+    overflow: hidden;
+    touch-action: none;
+  }
+  body {
+    @apply bg-azul-fundo font-sans text-azul-tinta antialiased;
+  }
+  ::selection {
+    @apply bg-azul-vivo text-white;
+  }
+  :focus-visible {
+    @apply outline-none ring-[3px] ring-azul-vivo ring-offset-2 ring-offset-transparent;
+  }
+}
+
+@layer components {
+  /* Display: Archivo condensada, pesada, caixa alta. */
+  .display {
+    @apply font-titulo font-black uppercase leading-[0.82] tracking-titulo;
+    font-stretch: 64%;
+  }
+  .titulo {
+    @apply font-titulo text-[3.1rem] font-black uppercase leading-[0.86] tracking-titulo sm:text-7xl lg:text-[6.4rem];
+    font-stretch: 66%;
+  }
+  .titulo-md {
+    @apply font-titulo text-[2rem] font-black uppercase leading-[0.9] tracking-[-0.015em] sm:text-[2.6rem];
+    font-stretch: 72%;
+  }
+  .rotulo {
+    @apply inline-flex items-center gap-2.5 font-sans text-[11px] font-extrabold uppercase tracking-rotulo;
+  }
+  .rotulo::before {
+    content: '';
+    @apply inline-block h-[7px] w-[7px] rounded-full bg-current;
+  }
+  .num {
+    @apply font-titulo font-black tabular-nums;
+    font-stretch: 80%;
+  }
+
+  .btn {
+    @apply relative inline-flex h-14 items-center justify-center gap-3 overflow-hidden whitespace-nowrap rounded-full px-8 font-titulo text-[17px] font-extrabold uppercase tracking-[0.04em] transition-[transform,box-shadow,background-color,color,filter] duration-300 ease-out active:scale-[0.97];
+    font-stretch: 88%;
+  }
+  .btn-azul {
+    @apply btn bg-azul text-white shadow-azul hover:bg-azul-vivo;
+  }
+  .btn-branco {
+    @apply btn bg-white text-azul-tinta hover:bg-azul-gelo;
+  }
+  .btn-linha {
+    @apply btn border border-current bg-transparent hover:bg-white/10;
+  }
+  .btn-zap {
+    @apply btn bg-whatsapp text-[#053b1c] shadow-[0_16px_34px_-14px_rgba(37,211,102,0.9)] hover:brightness-105;
+  }
+
+  .campo {
+    @apply h-[58px] w-full rounded-2xl border border-azul-tinta/10 bg-white px-5 text-[17px] font-semibold text-azul-tinta shadow-[inset_0_1px_2px_rgba(4,11,38,0.06)] transition placeholder:font-medium placeholder:text-azul-tinta/35;
+  }
+  .campo:focus {
+    @apply border-azul outline-none ring-4 ring-azul/20;
+  }
+  .campo[aria-invalid='true'] {
+    @apply border-vermelho ring-4 ring-vermelho/15;
+  }
+
+  .chip {
+    @apply flex min-h-[52px] cursor-pointer select-none items-center gap-3 rounded-2xl border-2 border-azul-tinta/10 bg-white px-4 text-[15px] font-semibold leading-snug text-azul-tinta transition active:scale-[0.98];
+  }
+  .chip[data-ativo='true'] {
+    @apply border-azul bg-azul-gelo shadow-[0_10px_24px_-14px_rgba(31,79,224,0.9)];
+  }
+
+  /* Seção que sobe por cima da anterior */
+  .arco {
+    @apply relative -mt-12 rounded-t-[40px] sm:-mt-16 sm:rounded-t-[64px];
+  }
+
+  .selo-exemplo {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1 font-sans text-[10.5px] font-bold uppercase tracking-[0.16em];
+  }
+}
+
+@layer utilities {
+  .contorno {
+    -webkit-text-stroke: 1.5px currentColor;
+    color: transparent;
+  }
+  .sem-barra {
+    scrollbar-width: none;
+  }
+  .sem-barra::-webkit-scrollbar {
+    display: none;
+  }
+  .equilibra {
+    text-wrap: balance;
+  }
+}
+
+/* Rótulos dos estados no mapa 3D (posicionados pela cena) */
+.rotulo-uf {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 900 13px/1 Archivo, sans-serif;
+  font-stretch: 80%;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(4, 11, 38, 0.9);
+  transition: opacity 0.4s;
+  will-change: transform;
+}
+.rotulo-uf b {
+  font: 800 10px/1 'Inter Tight', sans-serif;
+  background: #3d7bff;
+  border-radius: 999px;
+  padding: 3px 6px;
+  text-shadow: none;
+}
+.rotulo-uf[data-destaque='true'] {
+  color: #ffd84d;
+}
+
+/* Grão de filme global (estático: custo zero de repintura) */
+.grao::after {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  opacity: 0.09;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
