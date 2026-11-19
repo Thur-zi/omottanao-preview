@@ -46,7 +46,7 @@ export function Alternativa() {
                   decoding="async"
                 />
                 <span aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(4,11,38,0.75)_100%)]" />
-                <span className="absolute left-4 top-3 rounded bg-black/30 px-1.5 py-0.5 text-[9.5px] font-semibold text-white/70">Foto: Câmara dos Deputados · CC BY 3.0</span>
+                <span className="absolute bottom-2.5 left-4 text-[8px] font-medium tracking-wide text-white/45">Foto: Câmara dos Deputados · CC BY 3.0</span>
               </>
             ) : (
               <div className="grid h-full w-full place-items-center bg-[radial-gradient(80%_60%_at_50%_30%,#1F4FE0_0%,#081A52_70%)]">
@@ -61,17 +61,15 @@ export function Alternativa() {
             )}
           </m.div>
           <figcaption
-            className="absolute -bottom-6 right-3 flex rotate-[-4deg] items-center gap-3 rounded-2xl bg-white py-2 pl-2.5 pr-4 font-titulo text-xl font-black uppercase leading-none text-azul-tinta shadow-flutua [font-stretch:80%] sm:-right-6"
+            className="absolute -bottom-6 right-3 flex rotate-[-4deg] items-center gap-2.5 rounded-2xl bg-white px-2.5 py-2 font-titulo text-xl font-black uppercase leading-none text-azul-tinta shadow-flutua [font-stretch:80%] sm:-right-6"
             aria-label={`Partido e estado: ${CANDIDATO.partido}`}
           >
             <span className="flex items-center gap-2">
-              <img src={`${BASE}partidos/PL.webp`} alt="" width={36} height={36} className="h-9 w-9 object-contain" loading="lazy" />
-              PL
+              <img src={`${BASE}partidos/PL.webp`} alt="PL" width={36} height={36} className="h-9 w-9 object-contain" loading="lazy" />
             </span>
-            <i aria-hidden className="h-7 w-px bg-azul-tinta/15" />
+            <i aria-hidden className="h-6 w-px bg-azul-tinta/15" />
             <span className="flex items-center gap-2">
-              <img src={`${BASE}bandeiras/SP.webp`} alt="" width={36} height={24} className="h-6 w-9 rounded-[3px] object-cover shadow-[0_0_0_1px_rgba(10,20,51,0.15)]" loading="lazy" />
-              SP
+              <img src={`${BASE}bandeiras/SP.webp`} alt="São Paulo" width={36} height={24} className="h-6 w-9 rounded-[3px] object-cover shadow-[0_0_0_1px_rgba(10,20,51,0.15)]" loading="lazy" />
             </span>
           </figcaption>
         </m.figure>

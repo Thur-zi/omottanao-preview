@@ -35,33 +35,14 @@ export const NUMEROS = [
 export type Motivo = { tag: string; titulo: string; texto: string; fonte: string; url?: string; exemplo?: boolean }
 
 export const MOTIVOS: Motivo[] = [
-  {
-    tag: 'Aliança',
-    titulo: 'É o candidato que o PT apoia',
-    texto: 'Motta busca a reeleição com o apoio formal de 15 partidos. O PT está entre eles.',
-    fonte: '[inserir veículo e data]',
-  },
-  {
-    tag: 'Exemplo',
-    titulo: 'Título curto da decisão do Motta',
-    texto: 'Uma ou duas linhas, factuais, dizendo o que ele decidiu e quando. Texto de exemplo.',
-    fonte: 'Veículo, 00/00/2026',
-    exemplo: true,
-  },
-  {
-    tag: 'Exemplo',
-    titulo: 'Outra decisão contra a pauta da direita',
-    texto: 'Cada card precisa de fonte jornalística com link. Texto de exemplo.',
-    fonte: 'Veículo, 00/00/2026',
-    exemplo: true,
-  },
-  {
-    tag: 'Exemplo',
-    titulo: 'Mais um fato, com data e fonte',
-    texto: 'Frases curtas leem melhor no celular. Texto de exemplo.',
-    fonte: 'Veículo, 00/00/2026',
-    exemplo: true,
-  },
+  { tag: "Lula", titulo: "Fez campanha para o Lula", texto: "Em agosto, o presidente da Câmara declarou apoio à reeleição de Lula. Chamou o petista de “o melhor para o país”.", fonte: "Band, 10/08/2026", url: "https://www.band.com.br/politica/eleicoes/2026/hugo-motta-declara-apoio-a-reeleicao-de-lula-o-melhor-para-o-pais-202608101717" },
+  { tag: "Anistia", titulo: "Engavetou a anistia", texto: "A direita colocou Motta na cadeira em 2025. Ele disse não ver ambiente para anistia ampla e o projeto não andou.", fonte: "Revista Oeste, 2025", url: "https://www.revistaoeste.com/politica/motta-nao-vejo-ambiente-para-anistia-ampla-geral-e-irrestrita/" },
+  { tag: "Acordo", titulo: "Prometeu e não pautou", texto: "Para desocupar o plenário, a oposição diz ter acertado anistia e fim do foro. Motta negou o acordo. Nenhum dos dois foi votado.", fonte: "Congresso em Foco, 07/08/2025", url: "https://www.congressoemfoco.com.br/noticia/110843/motta-nega-acordo-com-oposicao-por-anistia-para-desocupar-plenario" },
+  { tag: "Punição", titulo: "Mandou punir a oposição", texto: "Depois do protesto na Mesa, Motta enviou à Corregedoria pedidos de punição contra 14 deputados de oposição.", fonte: "O Povo, 08/08/2025", url: "https://mais.opovo.com.br/jornal/politica/2025/08/08/motta-envia-a-corregedoria-pedidos-de-punicoes-a-14-deputados-apos-motim-na-camara.html" },
+  { tag: "Cassação", titulo: "Tirou o mandato de Eduardo Bolsonaro", texto: "A Mesa comandada por Motta declarou a perda dos mandatos de Eduardo Bolsonaro e Alexandre Ramagem. Antes, já tinha barrado Eduardo como líder da minoria.", fonte: "Congresso em Foco, 18/12/2025", url: "https://www.congressoemfoco.com.br/noticia/115035/hugo-motta-determina-cassacao-de-ramagem-e-eduardo-bolsonaro" },
+  { tag: "Zambelli", titulo: "Queria cassar Zambelli", texto: "Motta disse que cassar Carla Zambelli era “a única alternativa”. O plenário salvou o mandato; depois o STF anulou a votação.", fonte: "Congresso em Foco, 09/06/2025", url: "https://www.congressoemfoco.com.br/noticia/109244/hugo-diz-que-camara-vai-cassar-carla-zambelli--e-a-unica-alternativa" },
+  { tag: "Aliança", titulo: "É o candidato que o PT apoia", texto: "Motta busca mais dois anos no comando da Câmara com o apoio formal de 15 partidos. O PT está entre eles.", fonte: "Metrópoles, 11/11/2026", url: "https://www.metropoles.com/brasil/sem-consenso-pl-reune-bancada-eleita-da-camara-para-discutir-apoio-a-motta" },
+  { tag: "Racha", titulo: "Nem o PL aguenta", texto: "Nikolas Ferreira: se o PL apoiar Motta, fica “insustentável” a permanência dele no partido.", fonte: "InfoMoney, 18/11/2026", url: "https://www.infomoney.com.br/politica/nikolas-ameaca-deixar-pl-se-partido-apoiar-reeleicao-de-hugo-motta/" },
 ]
 
 /** "Título · detalhe" (o detalhe é opcional). Editável no painel. */
