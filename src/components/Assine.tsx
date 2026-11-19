@@ -134,7 +134,6 @@ export function Assine() {
   const cedula = useRef<HTMLDivElement>(null)
   const inclina = useRef<HTMLDivElement>(null)
   const verso = useRef<HTMLDivElement>(null)
-  const serie = useMemo(() => String(Math.floor(100000 + Math.random() * 899999)).replace(/(\d{3})(\d{3})/, '$1.$2'), [])
 
   useEffect(() => {
     if (ufGlobal && !tocouUf.current) setUf(ufGlobal)
@@ -323,10 +322,6 @@ export function Assine() {
                       <p className="display mt-2 text-[2.5rem] leading-[0.9] text-azul-tinta sm:text-[2.9rem]">Abaixo-assinado</p>
                       <p className="display mt-1.5 inline-block bg-azul px-[0.14em] pt-[0.12em] text-[1.9rem] leading-[0.95] text-white sm:text-[2.2rem]">O Motta não</p>
                     </div>
-                    <div className="text-right font-sans">
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-azul-tinta/40">Assinatura nº</p>
-                      <p className="font-mono text-[15px] font-bold tracking-wider text-azul">{serie}</p>
-                    </div>
                   </div>
 
                   {/* progresso */}
@@ -511,7 +506,7 @@ export function Assine() {
                         Seu NÃO foi registrado
                       </m.div>
                       <h3 className="titulo-md mt-7 sm:text-5xl">Valeu, {feito.nome}.</h3>
-                      <p className="mt-3 text-white/75">Sua assinatura nº {serie} entrou no abaixo-assinado de {NOMES_UF[feito.uf]}.</p>
+                      <p className="mt-3 text-white/75">Sua assinatura entrou no abaixo-assinado de {NOMES_UF[feito.uf]}.</p>
                       <ol className="mt-7 space-y-3.5">
                         {['Seu NÃO foi registrado.', 'Entre no WhatsApp do Luiz para saber quem cobrar.', 'Gere seu card e cobre o seu deputado.'].map((t, i) => (
                           <li key={i} className="flex items-center gap-3.5 text-[15.5px]">
