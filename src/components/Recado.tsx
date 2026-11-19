@@ -33,7 +33,7 @@ export function Recado() {
     if (ufGlobal) setUf(ufGlobal)
   }, [ufGlobal])
 
-  // lista oficial dos 513 deputados em exercício (carrega quando a seção monta)
+  // os 513 deputados eleitos em 2026 (TSE), que votam em 1º/02/2027 (carrega quando a seção monta)
   useEffect(() => {
     carregarDeputados().then(setDeputados).catch(() => setDeputados([]))
   }, [])
@@ -186,7 +186,7 @@ export function Recado() {
                     }}
                   />
                 </div>
-                <p className="mt-2 text-[12.5px] text-azul-tinta/50">Lista oficial da Câmara com os 513 deputados em exercício. Não achou? Digite o nome e use assim mesmo.</p>
+                <p className="mt-2 text-[12.5px] text-azul-tinta/50">Os 513 deputados eleitos em 2026 (TSE), que votam em 1º de fevereiro. Não achou? Digite o nome e use assim mesmo.</p>
               </div>
             </div>
             <label className="block">

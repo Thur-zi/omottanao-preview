@@ -156,7 +156,7 @@ function PainelTriplo({ uf, fechar }: { uf: UF; fechar: () => void }) {
       <div className="flex shrink-0 items-center gap-3 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
         <img src={`${BASE}bandeiras/${uf}.webp`} alt="" className="h-7 w-10 shrink-0 rounded-[4px] object-cover shadow-[0_0_0_1px_rgba(255,255,255,0.2)]" />
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-titulo text-[1.9rem] font-black uppercase leading-none text-white [font-stretch:72%] sm:text-[2.3rem]">{NOMES_UF[uf]}</h3>
+          <h3 className={`font-titulo font-black uppercase leading-[0.95] text-white [font-stretch:72%] ${NOMES_UF[uf].length > 12 ? 'text-[1.45rem] sm:text-[2rem]' : 'text-[1.9rem] sm:text-[2.3rem]'}`}>{NOMES_UF[uf]}</h3>
           <p className="mt-1 font-sans text-[10.5px] font-bold uppercase tracking-[0.16em] text-azul-claro">{r.cadeiras} cadeiras na Câmara</p>
         </div>
         <button type="button" onClick={fechar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white/10" aria-label="Voltar ao mapa">

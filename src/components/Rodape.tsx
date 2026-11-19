@@ -52,7 +52,7 @@ export function Rodape() {
               Iniciativa de apoiadores da candidatura de Luiz Philippe de Orleans e Bragança à Presidência da Câmara dos Deputados. Responsável:{' '}
               <b className="text-white">{CONFIG.responsavel}</b>.
             </p>
-            <p>Ilustração produzida a partir de foto pública, com tratamento gráfico em estêncil. Informações com fonte jornalística indicada. Mapa e municípios: IBGE. Deputados: Câmara dos Deputados (dados abertos).</p>
+            <p>Ilustração produzida a partir de foto pública, com tratamento gráfico em estêncil. Informações com fonte jornalística indicada. Mapa e municípios: IBGE. Deputados eleitos e fotos: TSE (dados abertos, eleição 2026). Foto do Luiz Philippe: Câmara dos Deputados (CC BY 3.0).</p>
           </div>
           <div className="space-y-1.5 sm:text-right">
             <a href={`${BASE}privacidade.html`} className="block font-bold text-white hover:underline">
