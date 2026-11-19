@@ -6,10 +6,10 @@ import { CONFIG } from '../config'
 import { useConteudo } from '../lib/conteudo'
 
 const LINKS = [
+  ['recado', 'Cobre seu deputado'],
   ['votometro', 'Votômetro'],
   ['por-que-nao', 'Por que não'],
   ['alternativa', 'A alternativa'],
-  ['recado', 'Cobre seu deputado'],
 ] as const
 
 export function Topo({ visivel }: { visivel: boolean }) {

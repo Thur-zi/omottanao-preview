@@ -8,7 +8,7 @@ import { Alternativa } from './Alternativa'
 import { Recado } from './Recado'
 import { Rodape } from './Rodape'
 
-/** Depois do formulário (2ª seção): [votômetro, arquivado] → por que não → a alternativa → card → rodapé. */
+/** Depois do formulário (2ª seção): card de cobrança → [votômetro, arquivado] → por que não → a alternativa → rodapé. */
 export default function Resto() {
   useConteudo()
   // quem chega por âncora (#votometro, #assine…) vai direto para a seção, depois que ela existe
@@ -19,10 +19,10 @@ export default function Resto() {
   return (
     <>
       {/* arquivado: liga em Painel → Configurações → "Mostrar o votômetro" */}
+      <Recado />
       {CONFIG.mostrarVotometro && <Votometro />}
       <PorQueNao />
       <Alternativa />
-      <Recado />
       <Rodape />
     </>
   )
