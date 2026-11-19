@@ -139,6 +139,17 @@
   text-shadow: 0 1px 8px rgba(4, 11, 38, 0.9);
   transition: opacity 0.4s;
   will-change: transform;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+/* área de toque maior que o texto (alvo de ~40px) */
+.rotulo-uf::after {
+  content: '';
+  position: absolute;
+  inset: -10px -6px;
+}
+.rotulo-uf:hover {
+  color: #ffd84d;
 }
 .rotulo-uf b {
   font: 800 10px/1 'Inter Tight Variable', 'Inter Tight', sans-serif;
@@ -146,6 +157,16 @@
   border-radius: 999px;
   padding: 3px 6px;
   text-shadow: none;
+}
+@media (max-width: 640px) {
+  .rotulo-uf {
+    font-size: 11px;
+    gap: 3px;
+  }
+  .rotulo-uf b {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
 }
 .rotulo-uf[data-destaque='true'] {
   color: #ffd84d;

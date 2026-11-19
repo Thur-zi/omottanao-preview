@@ -72,15 +72,42 @@ export function PorQueNao() {
     if (!el || !jan) return
     const st = s.current
     const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const medir = () => (st.metade = Math.max(1, el.scrollWidth / 2))
-    medir()
-    const ro = new ResizeObserver(medir)
-    ro.observe(el)
+    /*
+     * Cada recorte anda sozinho (transform próprio) e os que saem da tela ficam ocultos.
+     * Antes o trilho inteiro (~6.000 px) virava uma camada única: pesado demais para o celular.
+     */
+    let filhos: HTMLElement[] = []
+    let lefts: number[] = []
+    let largs: number[] = []
+    let base = 0
+    let vw = 0
+    const medir = () => {
+      filhos = Array.from(el.children) as HTMLElement[]
+      filhos.forEach((f) => (f.style.transform = ''))
+      lefts = filhos.map((f) => f.offsetLeft)
+      largs = filhos.map((f) => f.offsetWidth)
+      base = lefts[0] ?? 0
+      const ult = filhos.length - 1
+      st.metade = ult >= 0 ? Math.max(1, lefts[ult] + largs[ult] + 28 - base) : 1
+      vw = jan.clientWidth
+      aplicarRef.current()
+    }
     const aplicar = () => {
       if (st.x >= st.metade) st.x -= st.metade
       if (st.x < 0) st.x += st.metade
-      el.style.transform = `translate3d(${-st.x}px,0,0)`
+      for (let i = 0; i < filhos.length; i++) {
+        let pos = (((lefts[i] - base - st.x) % st.metade) + st.metade) % st.metade
+        if (pos > st.metade - largs[i]) pos -= st.metade // entrando pela esquerda
+        const visivel = pos < vw && pos + largs[i] > 0
+        const f = filhos[i]
+        f.style.visibility = visivel ? 'visible' : 'hidden'
+        if (visivel) f.style.transform = `translate3d(${base + pos - lefts[i]}px,0,0)`
+      }
     }
+    aplicarRef.current = aplicar
+    const ro = new ResizeObserver(medir)
+    ro.observe(jan)
+    medir()
     const passo = (agora: number) => {
       const dt = Math.min(50, agora - (st.ultimo || agora))
       st.ultimo = agora
@@ -107,7 +134,6 @@ export function PorQueNao() {
       }
     })
     io.observe(jan)
-    aplicarRef.current = aplicar
     return () => {
       cancelAnimationFrame(st.raf)
       st.raf = 0
@@ -152,7 +178,9 @@ export function PorQueNao() {
     if (janela.current) janela.current.style.cursor = ''
   }
 
-  const lista = [...MOTIVOS, ...MOTIVOS]
+  // repete só o necessário para o laço não abrir buraco em telas largas
+  const reps = Math.max(1, Math.ceil(6 / Math.max(1, MOTIVOS.length)))
+  const lista = Array.from({ length: reps }, () => MOTIVOS).flat()
 
   return (
     <section id="por-que-nao" className="arco relative z-30 overflow-hidden bg-[#0B0507] py-24 text-white sm:py-32">
@@ -212,9 +240,9 @@ export function PorQueNao() {
         aria-label="Decisões do Motta (passam sozinhas; passe o mouse para pausar ou use as setas)"
         tabIndex={0}
       >
-        <div ref={trilho} className="flex w-max gap-7 px-6 will-change-transform">
+        <div ref={trilho} className="flex w-max gap-7 px-6">
           {lista.map((mtv, i) => (
-            <div key={i} aria-hidden={i >= MOTIVOS.length}>
+            <div key={i} aria-hidden={i >= MOTIVOS.length} className="will-change-transform">
               <Recorte mtv={mtv} i={i % MOTIVOS.length} />
             </div>
           ))}

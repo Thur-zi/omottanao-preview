@@ -22,6 +22,8 @@ type Estado = {
 }
 
 const S = 100 // pixels do SVG por unidade de mundo
+/** Alarga o mapa no eixo leste-oeste (telas largas): mais espaço para as siglas caberem dentro dos estados. No celular a largura da tela é o limite, então fica 1. */
+const LARGO = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches ? 1 : 1.14
 const NAVY = new THREE.Color('#040B26')
 const SEM = new THREE.Color('#26375f')
 const AZUL = new THREE.Color('#1F4FE0')
@@ -37,7 +39,7 @@ function formas(d: string, W: number, H: number): THREE.Shape[] {
         .replace(/Z/g, '')
         .split('L')
         .map((p) => p.split(',').map(Number))
-        .map(([x, y]) => new THREE.Vector2((x - W / 2) / S, -(y - H / 2) / S))
+        .map(([x, y]) => new THREE.Vector2(((x - W / 2) / S) * LARGO, -(y - H / 2) / S))
       return new THREE.Shape(pts)
     })
 }
@@ -108,6 +110,9 @@ export class CenaMapa {
   private quadro = 0
   private sway = { x: 0, y: 0 }
   private contorno: THREE.Vector3[] = []
+  /** Direção da câmera (y para trás, z para cima). */
+  incl = { y: 10.5, z: 12.5 }
+  private medidas = new Map<string, { w: number; h: number }>()
 
   aoPassar?: (uf: string | null, x: number, y: number) => void
   aoClicar?: (uf: string) => void
@@ -178,8 +183,8 @@ export class CenaMapa {
       this.scene.add(grupo)
       this.malhas.push(malha)
       const [x0, y0, x1, y1] = m.b
-      const centro = new THREE.Vector3((m.c[0] - dados.w / 2) / S, -(m.c[1] - dados.h / 2) / S, altura)
-      this.estados.set(uf, { uf, grupo, topo, lado, corBase: cor.clone(), altura, centro, tamanho: Math.max(x1 - x0, y1 - y0) / S, alvoZ: 0 })
+      const centro = new THREE.Vector3(((m.c[0] - dados.w / 2) / S) * LARGO, -(m.c[1] - dados.h / 2) / S, altura)
+      this.estados.set(uf, { uf, grupo, topo, lado, corBase: cor.clone(), altura, centro, tamanho: Math.max((x1 - x0) * LARGO, y1 - y0) / S, alvoZ: 0 })
     }
 
     // nuvens ambiente: anel em volta do mapa, acima dele
@@ -213,6 +218,22 @@ export class CenaMapa {
         el.style.opacity = '0' // aparece no primeiro desenho, já no lugar
         el.innerHTML = i.nao > 0 ? `${uf}<b>${i.nao}</b>` : uf
         if (uf === destaque) el.dataset.destaque = 'true'
+        // o rótulo também é alvo de clique/toque (estados pequenos como o DF ficam fáceis de acertar)
+        el.setAttribute('role', 'button')
+        el.setAttribute('aria-label', `Ver deputados: ${uf}`)
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation()
+          if (!this.voando && !this.selecionado) this.aoClicar?.(uf)
+        })
+        el.addEventListener('pointerenter', (ev) => {
+          if ((ev as PointerEvent).pointerType !== 'mouse' || this.voando || this.selecionado) return
+          this.passando = uf
+          this.sujo = true
+        })
+        el.addEventListener('pointerleave', () => {
+          if (this.passando === uf) this.ponteiroSujo = true
+          this.sujo = true
+        })
         camadaRotulos.appendChild(el)
         this.rotulos.set(uf, el)
         void e
@@ -224,6 +245,10 @@ export class CenaMapa {
     canvas.addEventListener('pointerleave', this.sair)
     canvas.addEventListener('click', this.clicar)
 
+    document.fonts?.ready.then(() => {
+      this.medidas.clear()
+      this.sujo = true
+    })
     this.ro = new ResizeObserver(() => this.redimensionar())
     this.ro.observe(canvas.parentElement ?? canvas)
     this.redimensionar()
@@ -242,6 +267,7 @@ export class CenaMapa {
     this.w = el.clientWidth || 1
     this.h = el.clientHeight || 1
     this.renderer.setSize(this.w, this.h, false)
+    this.medidas.clear()
     this.camera.aspect = this.w / this.h
     this.camera.clearViewOffset()
     this.camera.updateProjectionMatrix()
@@ -249,7 +275,7 @@ export class CenaMapa {
     const q0 = this.camera.quaternion.clone()
     const v = new THREE.Vector3()
     const medir = (f: number) => {
-      this.camera.position.set(0, -10.5 * f, 12.5 * f)
+      this.camera.position.set(0, -this.incl.y * f, this.incl.z * f)
       this.camera.lookAt(this.olhar)
       this.camera.updateMatrixWorld()
       let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity
@@ -263,8 +289,8 @@ export class CenaMapa {
       return { x0, x1, y0, y1 }
     }
     // folga: rótulos laterais e o "Escolha um estado" no topo
-    const mx = this.camera.aspect < 0.8 ? 0.93 : 0.86
-    const my = 0.8
+    const mx = this.camera.aspect < 0.8 ? 0.985 : 0.9
+    const my = 0.84
     let lo = 0.3
     let hi = 6
     for (let i = 0; i < 22; i++) {
@@ -274,7 +300,7 @@ export class CenaMapa {
       else lo = f
     }
     const b = medir(hi)
-    this.posBase.set(0, -10.5 * hi, 12.5 * hi)
+    this.posBase.set(0, -this.incl.y * hi, this.incl.z * hi)
     // a névoa acompanha a distância da câmera (senão o mapa escurece quando ela se afasta)
     const fog = this.scene.fog as THREE.Fog
     fog.near = 16 * hi
@@ -372,14 +398,62 @@ export class CenaMapa {
     } else this.aoPassar?.(null, 0, 0)
   }
 
+  /**
+   * Posiciona os rótulos e afasta os que se sobrepõem (DF/GO, PR/SC, o Nordeste no celular).
+   * O estado menor cede espaço, mantendo a ordem real (norte/sul, leste/oeste).
+   */
   private atualizarRotulos() {
     if (!this.rotulos.size) return
     const mostrar = !this.voando && !this.selecionado
+    const itens: { uf: string; ax: number; ay: number; x: number; y: number; w: number; h: number; peso: number }[] = []
     for (const [uf, el] of this.rotulos) {
       const e = this.estados.get(uf)!
       const p = e.centro.clone().setZ(e.altura + e.alvoZ + 0.05).project(this.camera)
-      el.style.transform = `translate(${((p.x + 1) / 2) * this.w}px, ${((1 - p.y) / 2) * this.h}px) translate(-50%, -50%)`
+      const ax = ((p.x + 1) / 2) * this.w
+      const ay = ((1 - p.y) / 2) * this.h
+      let m = this.medidas.get(uf)
+      if (!m || !m.w) {
+        m = { w: el.offsetWidth, h: el.offsetHeight }
+        this.medidas.set(uf, m)
+      }
+      itens.push({ uf, ax, ay, x: ax, y: ay, w: m.w + 12, h: m.h + 7, peso: 1 / (e.tamanho + 0.25) })
+    }
+    // relaxamento simples: empurra pares sobrepostos pelo eixo de menor sobreposição
+    for (let volta = 0; volta < 30; volta++) {
+      let mexeu = false
+      for (let i = 0; i < itens.length; i++) {
+        for (let j = i + 1; j < itens.length; j++) {
+          const a = itens[i]
+          const b = itens[j]
+          const dx = b.x - a.x
+          const dy = b.y - a.y
+          const ox = (a.w + b.w) / 2 - Math.abs(dx)
+          const oy = (a.h + b.h) / 2 - Math.abs(dy)
+          if (ox <= 0 || oy <= 0) continue
+          mexeu = true
+          if (a.peso + b.peso === 0) continue
+          const pa = a.peso / (a.peso + b.peso)
+          const pb = 1 - pa
+          if (oy <= ox) {
+            const sinal = b.ay !== a.ay ? Math.sign(b.ay - a.ay) : dy !== 0 ? Math.sign(dy) : 1 // mantém a ordem real (PR acima de SC)
+            a.y -= sinal * oy * pa
+            b.y += sinal * oy * pb
+          } else {
+            const sinal = b.ax !== a.ax ? Math.sign(b.ax - a.ax) : dx !== 0 ? Math.sign(dx) : 1
+            a.x -= sinal * ox * pa
+            b.x += sinal * ox * pb
+          }
+        }
+      }
+      if (!mexeu) break
+    }
+    for (const it of itens) {
+      const el = this.rotulos.get(it.uf)!
+      const x = Math.min(this.w - it.w / 2, Math.max(it.w / 2, it.x))
+      const y = Math.min(this.h - it.h / 2, Math.max(it.h / 2, it.y))
+      el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`
       el.style.opacity = mostrar ? '1' : '0'
+      el.style.pointerEvents = mostrar ? 'auto' : 'none'
     }
   }
 
@@ -459,6 +533,11 @@ export class CenaMapa {
       u * u * a.y + 2 * u * t * b.y + t * t * c.y,
       u * u * a.z + 2 * u * t * b.z + t * t * c.z,
     )
+  }
+
+  /** Só para ajuste fino em desenvolvimento. */
+  reenquadrar() {
+    this.redimensionar()
   }
 
   definirVisivel(v: boolean) {
