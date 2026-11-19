@@ -4,12 +4,12 @@ export type Formato = 'feed' | 'status'
 export type DadosCard = { deputado: string; nome: string; uf: string; frase: number; formato: Formato; site: string; foto?: HTMLImageElement | null; partido?: string }
 
 export const FRASES = [
-  (d: string) => ['Eu votei em', `${d}.`, 'Não votei para', 'eleger o Motta.'],
+  (d: string) => ['Eu votei em você,', `${d}.`, 'Não votei pra', 'eleger o Motta.'],
   (d: string) => [`${d},`, 'meu voto não', 'foi para', 'o Motta.'],
   (d: string) => ['Deputado', `${d}:`, 'diga não', 'ao Motta.'],
 ]
 export const FRASES_RESUMO = [
-  'Eu votei em [deputado]. Não votei para eleger o Motta.',
+  'Eu votei em você, [deputado]. Não votei pra eleger o Motta.',
   '[deputado], meu voto não foi para o Motta.',
   'Deputado [deputado]: diga não ao Motta.',
 ]
@@ -20,6 +20,36 @@ function fonte(g: CanvasRenderingContext2D, peso: number, px: number, condensada
   if ('fontStretch' in gg) gg.fontStretch = condensada ? 'extra-condensed' : 'normal'
   else g.font = `${peso} ${condensada ? 'extra-condensed ' : ''}${px}px "Archivo Variable", Archivo, "Arial Narrow", sans-serif`
 }
+
+/**
+ * O Safari não aplica font-stretch no canvas: a fonte sai larga e o card fica diferente do
+ * Chrome. Detecta e, nesse caso, estreita o texto na mão (escala horizontal).
+ */
+let escalaX: number | null = null
+function condensar(g: CanvasRenderingContext2D) {
+  if (escalaX !== null) return escalaX
+  const gg = g as CanvasRenderingContext2D & { fontStretch?: string }
+  g.save()
+  g.font = '900 100px "Archivo Variable", Archivo, sans-serif'
+  if ('fontStretch' in gg) gg.fontStretch = 'normal'
+  const normal = g.measureText('MOTTA NÃO').width
+  fonte(g, 900, 100)
+  const estreita = g.measureText('MOTTA NÃO').width
+  g.restore()
+  escalaX = estreita < normal * 0.93 ? 1 : 0.78
+  return escalaX
+}
+
+/** Texto condensado (real ou simulado) em x,y; devolve a largura desenhada. */
+function textoCond(g: CanvasRenderingContext2D, t: string, x: number, y: number) {
+  const sx = condensar(g)
+  g.save()
+  g.translate(x, y)
+  g.scale(sx, 1)
+  g.fillText(t, 0, 0)
+  g.restore()
+}
+const larguraCond = (g: CanvasRenderingContext2D, t: string) => g.measureText(t).width * condensar(g)
 
 function carimbo(g: CanvasRenderingContext2D, cx: number, cy: number, larg: number, giro: number) {
   const alt = larg * 0.31
@@ -79,8 +109,9 @@ export function desenharCard(cv: HTMLCanvasElement, img: HTMLImageElement | null
 
   // foto oficial do deputado escolhido, como um retrato preso no cartaz
   if (d.foto) {
-    const fw = 190, fh = 253
-    const fx = W - pad - fw + 10, fy = altoFoto - fh - 70
+    const feed = d.formato === 'feed'
+    const fw = feed ? 158 : 190, fh = feed ? 210 : 253
+    const fx = W - pad - fw + 10, fy = altoFoto - fh - (feed ? 150 : 70)
     g.save()
     g.translate(fx + fw / 2, fy + fh / 2)
     g.rotate((-4 * Math.PI) / 180)
@@ -107,28 +138,34 @@ export function desenharCard(cv: HTMLCanvasElement, img: HTMLImageElement | null
   g.fillRect(0, H - 18, W, 18)
 
   const linhas = FRASES[d.frase](dep).map((l) => l.toUpperCase())
-  let tam = d.formato === 'feed' ? 150 : 168
+  const maxW = W - pad * 2
+  let tam = d.formato === 'feed' ? 150 : 172
   fonte(g, 900, tam)
-  while (tam > 60 && linhas.some((l) => g.measureText(l).width > W - pad * 2)) {
+  while (tam > 56 && linhas.some((l) => larguraCond(g, l) > maxW)) {
     tam -= 4
     fonte(g, 900, tam)
   }
-  const alturaBloco = linhas.length * tam * 0.9
-  let y = altoFoto - tam * 0.55
-  const limite = H - 210
-  if (y + alturaBloco > limite) y = limite - alturaBloco
+  // métricas reais da fonte: a faixa azul não invade a linha de cima
   g.textAlign = 'left'
-  g.textBaseline = 'top'
+  g.textBaseline = 'alphabetic'
+  const cap = g.measureText('H').actualBoundingBoxAscent || tam * 0.72
+  const entre = tam * 0.98
+  const bloco = (linhas.length - 1) * entre + cap
+  const topo = altoFoto - (d.formato === 'feed' ? tam * 0.45 : tam * 0.2)
+  const fundo = H - 230
+  // no story, o recado fica no meio do espaço livre (sem buraco embaixo)
+  let y0 = d.formato === 'feed' ? topo : Math.max(topo, (topo + fundo) / 2 - bloco / 2)
+  if (y0 + bloco > fundo) y0 = fundo - bloco
   linhas.forEach((l, i) => {
+    const base = y0 + cap + i * entre
     const temDep = l.startsWith(dep)
-    const temNao = /MOTTA/.test(l)
-    if (temNao) {
-      const w = g.measureText(l).width
+    if (/MOTTA/.test(l)) {
+      const w = larguraCond(g, l)
       g.fillStyle = '#1F4FE0'
-      g.fillRect(pad - 14, y + i * tam * 0.9 - tam * 0.02, w + 28, tam * 0.9)
+      g.fillRect(pad - 14, base - cap - tam * 0.1, w + 28, cap + tam * 0.2)
     }
     g.fillStyle = temDep ? '#A9C1FF' : '#FFFFFF'
-    g.fillText(l, pad, y + i * tam * 0.9 + tam * 0.04)
+    textoCond(g, l, pad, base)
   })
 
   // assinatura
