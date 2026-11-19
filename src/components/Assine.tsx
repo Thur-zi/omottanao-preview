@@ -255,7 +255,7 @@ export function Assine() {
           </h2>
           <Surge atraso={0.15}>
             <p className="mt-6 max-w-[42ch] text-lg leading-relaxed text-white/70">
-              Assine e receba no WhatsApp quem é o deputado do seu estado e como cobrá-lo. Cada NÃO conta antes do voto secreto.
+              <b className="font-extrabold text-white">Coerência não se negocia.</b> Elegi deputado de direita para ser oposição ao PT na Câmara.
             </p>
           </Surge>
 
