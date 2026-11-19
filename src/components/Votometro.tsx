@@ -16,7 +16,7 @@ function useCadeiras() {
   return useMemo(() => {
     const fileiras = 13
     const pts: { x: number; y: number; a: number }[] = []
-    const raios = Array.from({ length: fileiras }, (_, i) => 0.36 + (i / (fileiras - 1)) * 0.64)
+    const raios = Array.from({ length: fileiras }, (_, i) => 0.44 + (i / (fileiras - 1)) * 0.56)
     const soma = raios.reduce((s, r) => s + r, 0)
     let resto = 513
     raios.forEach((r, i) => {
@@ -47,13 +47,13 @@ function Hemiciclo() {
       </g>
       {marco && (
         <g style={{ opacity: visto ? 1 : 0, transition: 'opacity .6s 1s' }}>
-          <line x1={100} y1={100} x2={100 + (marco.x - 100) * 1.06} y2={100 + (marco.y - 100) * 1.06} stroke="#FFFFFF" strokeWidth={0.5} strokeDasharray="1.4 1.4" />
+          <line x1={100 + (marco.x - 100) * (36 / Math.hypot(marco.x - 100, marco.y - 100))} y1={100 + (marco.y - 100) * (36 / Math.hypot(marco.x - 100, marco.y - 100))} x2={100 + (marco.x - 100) * 1.06} y2={100 + (marco.y - 100) * 1.06} stroke="#FFFFFF" strokeWidth={0.5} strokeDasharray="1.4 1.4" />
         </g>
       )}
       <text x={100} y={92} textAnchor="middle" className="fill-white font-titulo" style={{ fontSize: 18, fontWeight: 900, fontStretch: '75%' }}>
         257
       </text>
-      <text x={100} y={102} textAnchor="middle" className="fill-white/60" style={{ fontSize: 4.6, fontWeight: 700, letterSpacing: 1.2 }}>
+      <text x={100} y={102} textAnchor="middle" className="fill-white/60" style={{ fontSize: 4, fontWeight: 700, letterSpacing: 0.7 }}>
         VOTOS PARA VENCER
       </text>
     </svg>
