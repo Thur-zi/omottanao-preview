@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, m, useInView } from 'motion/react'
 import { ArrowLeft, MapPin, MessageCircle, X } from 'lucide-react'
 import { CONFIG } from '../config'
-import { CADEIRAS, NOMES_UF, TOTAIS, UFS, intensidade, resumo, type Registro, type UF } from '../data/votometro'
+import { CADEIRAS, NOMES_UF, UFS, intensidade, resumo, totais, type Registro, type UF } from '../data/votometro'
+import { carregarConteudo, useConteudo } from '../lib/conteudo'
 import { definirUF, useUF } from '../lib/estado'
 import { EASE, NumeroAnimado, Surge, TituloRevela, rolarPara } from '../lib/movimento'
 import { linkWhatsapp, rastrear } from '../lib/rastreio'
@@ -34,7 +35,7 @@ function Hemiciclo() {
   const cadeiras = useCadeiras()
   const ref = useRef<SVGSVGElement>(null)
   const visto = useInView(ref, { once: true, margin: '-15% 0px' })
-  const { motta, nao } = TOTAIS
+  const { motta, nao } = totais()
   const marco = cadeiras[256]
   return (
     <svg ref={ref} viewBox="0 0 200 108" className="w-full" role="img" aria-label={`${nao} de 513 deputados já disseram não; ${motta} declararam apoio ao Motta. Maioria: 257.`}>
@@ -84,60 +85,67 @@ const iniciais = (n: string) =>
 function Deputado({ r, i }: { r: Registro; i: number }) {
   return (
     <m.li
-      className="flex items-start gap-2.5 rounded-xl bg-white/[0.05] p-2.5"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: EASE, delay: 0.35 + i * 0.04 }}
+      className="flex h-9 items-center gap-2 rounded-lg bg-white/[0.05] pl-1 pr-2"
+      title={`${r.nome} (${r.partido}) · Fonte: ${r.fonte}`}
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, ease: EASE, delay: 0.3 + i * 0.04 }}
     >
-      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-white/10 font-sans text-[11px] font-extrabold ring-2 ring-current">
+      <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-white/10 font-sans text-[9.5px] font-extrabold ring-[1.5px] ring-current">
         {r.foto ? <img src={r.foto} alt="" className="h-full w-full object-cover" loading="lazy" /> : iniciais(r.nome) || '?'}
       </span>
-      <span className="min-w-0 text-white">
-        <b className="block break-words text-[13px] font-bold leading-tight">{r.nome}</b>
-        <span className="block text-[11px] leading-snug text-white/55">
-          {r.partido} · {r.url ? <a href={r.url} target="_blank" rel="noopener" className="underline">{r.fonte}</a> : r.fonte}
-        </span>
-      </span>
+      <span className="min-w-0 truncate text-[12.5px] font-bold text-white">{r.nome}</span>
     </m.li>
   )
 }
 
+const VISIVEIS = 4
+
 function Coluna({ tipo, n, registros, uf }: { tipo: 'motta' | 'convencer' | 'nao'; n: number; registros: Registro[]; uf: UF }) {
+  const [todos, setTodos] = useState(false)
   const cfg = {
     motta: { titulo: 'Querem o Motta', cor: 'text-[#FF6B6B]', barra: 'bg-vermelho-vivo', ponto: 'bg-vermelho-vivo', vazio: 'Ninguém declarou apoio em público, com fonte.' },
     convencer: { titulo: 'A convencer', cor: 'text-white/80', barra: 'bg-aco', ponto: 'bg-aco/60', vazio: '' },
     nao: { titulo: 'Dizem NÃO', cor: 'text-azul-claro', barra: 'bg-azul-vivo', ponto: 'bg-azul-vivo', vazio: 'Ninguém daqui disse NÃO em público ainda.' },
   }[tipo]
+  const lista = todos ? registros : registros.slice(0, VISIVEIS)
   return (
-    <div className="min-w-0 rounded-2xl bg-white/[0.04] p-3 sm:p-4">
-      <span className={`mb-3 block h-1 w-full rounded-full ${cfg.barra}`} />
-      <p className="font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.16em] text-white/70 sm:text-[11px]">{cfg.titulo}</p>
-      <p className={`num mt-1 text-[3.2rem] leading-none sm:text-[4.4rem] ${cfg.cor}`}>
+    <div className="flex min-h-0 min-w-0 flex-col rounded-2xl bg-white/[0.04] p-3 sm:p-3.5">
+      <span className={`mb-2.5 block h-1 w-full shrink-0 rounded-full ${cfg.barra}`} />
+      <p className="font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.14em] text-white/70 sm:text-[10.5px]">{cfg.titulo}</p>
+      <p className={`num mt-1 text-[2.6rem] leading-none sm:text-[3.4rem] ${cfg.cor}`}>
         <NumeroAnimado valor={n} duracao={1.1} />
       </p>
-      <div className="mt-3 flex flex-wrap gap-[3px]" aria-hidden>
+      <div className="mt-2.5 flex flex-wrap gap-[2.5px]" aria-hidden>
         {Array.from({ length: Math.min(n, 70) }, (_, i) => (
           <m.span
             key={i}
-            className={`h-[9px] w-[9px] rounded-t-full rounded-b-[2px] ${cfg.ponto}`}
+            className={`h-[7px] w-[7px] rounded-t-full rounded-b-[1.5px] ${cfg.ponto}`}
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.25 + i * 0.012 }}
+            transition={{ duration: 0.3, delay: 0.2 + i * 0.01 }}
           />
         ))}
       </div>
       {tipo === 'convencer' ? (
-        <p className="mt-4 text-[12.5px] leading-snug text-white/60">
+        <p className="mt-3 text-[12px] leading-snug text-white/60">
           Sem posição pública. <b className="text-white">São esses que precisam ouvir você.</b>
         </p>
       ) : registros.length ? (
-        <ul className={`mt-4 space-y-2 ${cfg.cor}`}>
-          {registros.map((r, i) => (
+        <ul className={`mt-3 min-h-0 space-y-1.5 ${todos ? 'overflow-y-auto pr-1' : ''} ${cfg.cor}`} data-lenis-prevent>
+          {lista.map((r, i) => (
             <Deputado key={r.nome + i} r={r} i={i} />
           ))}
+          {registros.length > VISIVEIS && (
+            <li>
+              <button type="button" onClick={() => setTodos((v) => !v)} className="h-8 w-full rounded-lg border border-white/10 text-[11.5px] font-bold text-white/70 transition hover:bg-white/10 hover:text-white">
+                {todos ? 'Mostrar menos' : `+${registros.length - VISIVEIS} deputados`}
+              </button>
+            </li>
+          )}
         </ul>
       ) : (
-        <p className="mt-4 text-[12.5px] leading-snug text-white/50">{cfg.vazio}</p>
+        <p className="mt-3 text-[12px] leading-snug text-white/50">{cfg.vazio}</p>
       )}
       <span className="sr-only">{NOMES_UF[uf]}</span>
     </div>
@@ -150,7 +158,7 @@ function PainelTriplo({ uf, fechar }: { uf: UF; fechar: () => void }) {
   const motta = r.registros.filter((x) => x.posicao === 'motta')
   return (
     <m.div
-      className="absolute inset-x-0 bottom-0 z-20 max-h-[64%] overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-white/10 bg-azul-fundo/[0.97] p-4 pb-6 shadow-flutua sm:p-7 lg:inset-y-4 lg:left-auto lg:right-4 lg:max-h-none lg:w-[min(660px,56%)] lg:rounded-[28px] lg:border"
+      className="absolute inset-x-0 bottom-0 z-20 flex max-h-[80%] flex-col rounded-t-[28px] border-t border-white/10 bg-azul-fundo/[0.97] p-4 shadow-flutua sm:p-6 lg:inset-y-4 lg:left-auto lg:right-4 lg:max-h-none lg:w-[min(640px,54%)] lg:rounded-[28px] lg:border"
       initial={{ y: '105%', opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: '105%', opacity: 0, transition: { duration: 0.5, ease: EASE } }}
@@ -159,37 +167,40 @@ function PainelTriplo({ uf, fechar }: { uf: UF; fechar: () => void }) {
       aria-label={`Deputados de ${NOMES_UF[uf]}`}
       data-lenis-prevent
     >
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div>
-          <p className="rotulo text-azul-claro">{r.cadeiras} cadeiras</p>
-          <h3 className="titulo-md mt-2 text-white sm:text-5xl">{NOMES_UF[uf]}</h3>
+      <div className="mb-4 flex shrink-0 items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <img src={`${BASE}bandeiras/${uf}.webp`} alt="" className="h-7 w-10 rounded-[4px] object-cover shadow-[0_0_0_1px_rgba(255,255,255,0.2)]" />
+          <div>
+            <h3 className="font-titulo text-[2rem] font-black uppercase leading-none text-white [font-stretch:72%] sm:text-[2.4rem]">{NOMES_UF[uf]}</h3>
+            <p className="mt-1 font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-azul-claro">{r.cadeiras} cadeiras na Câmara</p>
+          </div>
         </div>
         <button type="button" onClick={fechar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white/10" aria-label="Voltar ao mapa">
           <X size={20} />
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+      <div className="grid min-h-0 flex-1 grid-cols-3 gap-2 sm:gap-3">
         <Coluna tipo="motta" n={r.motta} registros={motta} uf={uf} />
         <Coluna tipo="convencer" n={r.convencer} registros={[]} uf={uf} />
         <Coluna tipo="nao" n={r.nao} registros={nao} uf={uf} />
       </div>
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-4 flex shrink-0 items-center gap-2.5">
         <button
           type="button"
-          className="btn-azul"
+          className="btn-azul h-12 min-w-0 flex-1 px-5 text-[15px]"
           onClick={() => {
             definirUF(uf)
             rolarPara('recado')
           }}
           data-rastreio={`cta:cobrar_${uf}`}
         >
-          Cobrar os deputados de {uf}
+          <span className="truncate">Cobrar deputados de {uf}</span>
         </button>
-        <a className="btn-linha text-white" href={linkWhatsapp('fonte', uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:fonte">
-          <MessageCircle size={18} /> Mandar uma fonte
+        <a className="btn-linha h-12 shrink-0 px-4 text-[15px] text-white" href={linkWhatsapp('fonte', uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:fonte" title="Mandar a fonte de um posicionamento">
+          <MessageCircle size={17} /> Fonte
         </a>
-        <button type="button" onClick={fechar} className="btn h-14 text-white/70 hover:text-white sm:ml-auto">
-          <ArrowLeft size={18} /> Mapa
+        <button type="button" onClick={fechar} className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-white/15 text-white/75 transition hover:bg-white/10 hover:text-white" aria-label="Voltar ao mapa" title="Voltar ao mapa">
+          <ArrowLeft size={18} />
         </button>
       </div>
     </m.div>
@@ -198,6 +209,8 @@ function PainelTriplo({ uf, fechar }: { uf: UF; fechar: () => void }) {
 
 /* ---------------- seção ---------------- */
 export function Votometro() {
+  useConteudo()
+  const TOTAIS_ = totais()
   const ufPessoa = useUF()
   const palco = useRef<HTMLDivElement>(null)
   const tela = useRef<HTMLCanvasElement>(null)
@@ -213,7 +226,7 @@ export function Votometro() {
     if (!perto || !tela.current) return
     let vivo = true
     let io: IntersectionObserver | null = null
-    Promise.all([import('../three/mapa'), fetch(`${BASE}brmap.json`).then((r) => r.json() as Promise<DadosMapa>)])
+    Promise.all([import('../three/mapa'), fetch(`${BASE}brmap.json`).then((r) => r.json() as Promise<DadosMapa>), carregarConteudo()])
       .then(([{ CenaMapa }, dados]) => {
         if (!vivo || !tela.current) return
         const c = new CenaMapa(
@@ -278,7 +291,7 @@ export function Votometro() {
           <div>
             <Surge className="flex flex-wrap items-center gap-3">
               <span className="rotulo text-azul-claro">Votômetro</span>
-              {CONFIG.previa && TOTAIS.temExemplo && <span className="selo-exemplo border-white/30 text-white/60">Prévia · dados fictícios</span>}
+              {CONFIG.previa && TOTAIS_.temExemplo && <span className="selo-exemplo border-white/30 text-white/60">Prévia · dados fictícios</span>}
             </Surge>
             <h2 className="titulo mt-5">
               <TituloRevela texto="Quem já disse não" destaque={['não']} />
@@ -290,7 +303,7 @@ export function Votometro() {
             </Surge>
             <Surge atraso={0.2} className="mt-10 flex items-end gap-4">
               <span className="num text-[7rem] leading-[0.78] text-azul-vivo sm:text-[9rem]">
-                <NumeroAnimado valor={TOTAIS.nao} />
+                <NumeroAnimado valor={TOTAIS_.nao} />
               </span>
               <span className="pb-2 text-[15px] font-semibold leading-tight text-white/70">
                 deputados já
@@ -302,12 +315,12 @@ export function Votometro() {
           <Surge atraso={0.1}>
             <Hemiciclo />
             <div className="mt-3 flex justify-between gap-4 text-[12px] font-semibold text-white/60">
-              <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-vermelho-vivo" /> Com Motta · {TOTAIS.motta}</span>
-              <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-[#2A3a64]" /> A convencer · {TOTAIS.convencer}</span>
-              <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-azul-vivo" /> NÃO · {TOTAIS.nao}</span>
+              <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-vermelho-vivo" /> Com Motta · {TOTAIS_.motta}</span>
+              <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-[#2A3a64]" /> A convencer · {TOTAIS_.convencer}</span>
+              <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-azul-vivo" /> NÃO · {TOTAIS_.nao}</span>
             </div>
             <p className="mt-5 text-[15px] text-white/70">
-              Se 257 deputados disserem NÃO, Motta não chega lá. <b className="text-white">Faltam {257 - TOTAIS.nao}.</b>
+              Se 257 deputados disserem NÃO, Motta não chega lá. <b className="text-white">Faltam {257 - TOTAIS_.nao}.</b>
             </p>
           </Surge>
         </div>

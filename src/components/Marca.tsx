@@ -29,7 +29,7 @@ export function Impressao({ className = '', cor = '#ffffff', id = 'tinta' }: { c
           x="260"
           y="114"
           textAnchor="middle"
-          fontFamily="Archivo, 'Arial Narrow', sans-serif"
+          fontFamily="'Archivo Variable', Archivo, 'Arial Narrow', sans-serif"
           fontWeight="900"
           fontSize="74"
           style={{ fontStretch: '70%' }}

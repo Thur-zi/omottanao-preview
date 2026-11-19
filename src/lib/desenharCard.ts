@@ -16,9 +16,9 @@ export const FRASES_RESUMO = [
 
 function fonte(g: CanvasRenderingContext2D, peso: number, px: number, condensada = true) {
   const gg = g as CanvasRenderingContext2D & { fontStretch?: string }
-  g.font = `${peso} ${px}px Archivo, "Arial Narrow", sans-serif`
+  g.font = `${peso} ${px}px "Archivo Variable", Archivo, "Arial Narrow", sans-serif`
   if ('fontStretch' in gg) gg.fontStretch = condensada ? 'extra-condensed' : 'normal'
-  else g.font = `${peso} ${condensada ? 'extra-condensed ' : ''}${px}px Archivo, "Arial Narrow", sans-serif`
+  else g.font = `${peso} ${condensada ? 'extra-condensed ' : ''}${px}px "Archivo Variable", Archivo, "Arial Narrow", sans-serif`
 }
 
 function carimbo(g: CanvasRenderingContext2D, cx: number, cy: number, larg: number, giro: number) {
@@ -92,7 +92,7 @@ export function desenharCard(cv: HTMLCanvasElement, img: HTMLImageElement | null
     g.drawImage(d.foto, -fw / 2, -fh / 2, fw, fh)
     if (d.partido) {
       g.fillStyle = '#040B26'
-      g.font = '800 26px "Inter Tight", Inter, sans-serif'
+      g.font = '800 26px "Inter Tight Variable", "Inter Tight", Inter, sans-serif'
       g.textAlign = 'center'
       g.textBaseline = 'middle'
       g.fillText(`${d.partido} · ${d.uf || ''}`.replace(/ · $/, ''), 0, fh / 2 + 22)
@@ -135,7 +135,7 @@ export function desenharCard(cv: HTMLCanvasElement, img: HTMLImageElement | null
   g.textBaseline = 'alphabetic'
   const base = H - 74
   const nome = d.nome.trim().split(' ')[0]
-  g.font = '600 34px "Inter Tight", Inter, sans-serif'
+  g.font = '600 34px "Inter Tight Variable", "Inter Tight", Inter, sans-serif'
   g.fillStyle = 'rgba(255,255,255,0.7)'
   const assinatura = `${nome ? nome[0].toUpperCase() + nome.slice(1) : 'Eleitor'}${d.uf ? `, eleitor(a) de ${d.uf}` : ''}`
   g.fillText(`— ${assinatura}`, pad, base - 64)
@@ -148,7 +148,7 @@ export function desenharCard(cv: HTMLCanvasElement, img: HTMLImageElement | null
   g.fillRect(pad + w1 - 6, base - 52, w2 + 14, 62)
   g.fillStyle = '#fff'
   g.fillText('NÃO.', pad + w1, base)
-  g.font = '700 28px "Inter Tight", Inter, sans-serif'
+  g.font = '700 28px "Inter Tight Variable", "Inter Tight", Inter, sans-serif'
   g.textAlign = 'right'
   g.fillStyle = 'rgba(255,255,255,0.6)'
   g.fillText(d.site, W - pad, base)

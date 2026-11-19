@@ -3,11 +3,13 @@ import { AnimatePresence, m } from 'motion/react'
 import { Share2, Stamp } from 'lucide-react'
 import { CONFIG } from '../config'
 import { TituloRevela, rolarPara } from '../lib/movimento'
+import { useConteudo } from '../lib/conteudo'
 import { Impressao, Logo } from './Marca'
 
 const BASE = import.meta.env.BASE_URL
 
 export function Rodape() {
+  useConteudo()
   return (
     <footer className="arco relative z-[70] overflow-hidden bg-vermelho text-white">
       {/* fechamento: volta ao vermelho do começo, com o carimbo já dado */}

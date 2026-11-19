@@ -4,7 +4,7 @@
  * e o WhatsApp nunca fica bloqueado por falha de rede.
  */
 import { CONFIG } from '../config'
-import { ORIGEM } from './rastreio'
+import { ORIGEM, SESSAO } from './rastreio'
 import type { UF } from '../data/votometro'
 
 export const TEXTO_CONSENTIMENTO =
@@ -12,7 +12,7 @@ export const TEXTO_CONSENTIMENTO =
 
 export type Lead = { nome: string; sobrenome: string; whatsapp: string; uf: UF; cidade: { codigo_ibge: number; nome: string } }
 
-export async function enviarLead(lead: Lead): Promise<{ ok: boolean; demonstracao: boolean }> {
+export async function enviarLead(lead: Lead, extra: { tempo?: number; empresa?: string } = {}): Promise<{ ok: boolean; demonstracao: boolean; motivo?: string }> {
   const agora = new Date()
   const payload = {
     nome: lead.nome.trim(),
@@ -31,6 +31,9 @@ export async function enviarLead(lead: Lead): Promise<{ ok: boolean; demonstraca
       fuso: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
     origem: { ...ORIGEM, pagina: location.origin + location.pathname },
+    sessao: SESSAO,
+    tempo: Math.round(extra.tempo ?? 99999),
+    empresa: extra.empresa ?? '',
   }
   try {
     sessionStorage.setItem('omn:lead', JSON.stringify({ nome: payload.nome.split(' ')[0], uf: lead.uf }))
@@ -49,7 +52,8 @@ export async function enviarLead(lead: Lead): Promise<{ ok: boolean; demonstraca
       body: JSON.stringify(payload),
       keepalive: true,
     })
-    return { ok: r.ok, demonstracao: false }
+    const j = (await r.json().catch(() => ({}))) as { ok?: boolean; motivo?: string }
+    return { ok: r.ok && j.ok !== false, demonstracao: false, motivo: j.motivo }
   } catch {
     return { ok: false, demonstracao: false }
   }

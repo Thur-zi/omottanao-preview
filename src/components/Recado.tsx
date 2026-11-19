@@ -59,7 +59,7 @@ export function Recado() {
     i.src = `${BASE}motta-760.webp`
     img.current = i
     const fontes = document.fonts
-      ? Promise.all([document.fonts.load('900 100px Archivo'), document.fonts.load('600 30px "Inter Tight"')])
+      ? Promise.all([document.fonts.load('900 100px "Archivo Variable"'), document.fonts.load('600 30px "Inter Tight Variable"')])
       : Promise.resolve()
     Promise.all([new Promise((r) => (i.onload = r)), fontes]).finally(() => setPronto(true))
   }, [])

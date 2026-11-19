@@ -4,11 +4,13 @@ import { CONFIG } from '../config'
 import { CANDIDATO, PAUTAS } from '../data/conteudo'
 import { EASE, Surge, TituloRevela } from '../lib/movimento'
 import { linkWhatsapp } from '../lib/rastreio'
+import { useConteudo } from '../lib/conteudo'
 import { IconeWhatsapp } from './Icones'
 
 const BASE = import.meta.env.BASE_URL
 
 export function Alternativa() {
+  useConteudo()
   const ref = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
   const yFoto = useTransform(scrollYProgress, [0, 1], [60, -60])
@@ -28,8 +30,8 @@ export function Alternativa() {
             viewport={{ once: true, margin: '-10% 0px' }}
             transition={{ duration: 1.4, ease: EASE }}
           >
-            {CANDIDATO.foto ? (
-              <img src={`${BASE}${CANDIDATO.foto}`} alt={CANDIDATO.nome} className="h-full w-full object-cover" loading="lazy" />
+            {CONFIG.candidatoFoto ? (
+              <img src={CONFIG.candidatoFoto} alt={CANDIDATO.nome} className="h-full w-full object-cover" loading="lazy" />
             ) : (
               <div className="grid h-full w-full place-items-center bg-[radial-gradient(80%_60%_at_50%_30%,#1F4FE0_0%,#081A52_70%)]">
                 <svg viewBox="0 0 200 250" className="h-[78%] w-[78%] text-white/15" aria-hidden>

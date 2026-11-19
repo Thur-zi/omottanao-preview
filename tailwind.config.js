@@ -25,8 +25,8 @@ export default {
         whatsapp: '#25D366',
       },
       fontFamily: {
-        titulo: ['Archivo', 'Arial Narrow', 'sans-serif'],
-        sans: ['"Inter Tight"', 'Inter', 'system-ui', 'sans-serif'],
+        titulo: ['"Archivo Variable"', 'Archivo', 'Arial Narrow', 'sans-serif'],
+        sans: ['"Inter Tight Variable"', '"Inter Tight"', 'system-ui', 'sans-serif'],
       },
       letterSpacing: { titulo: '-0.025em', rotulo: '0.24em' },
       boxShadow: {

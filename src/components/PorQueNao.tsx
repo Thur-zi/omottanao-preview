@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { CONFIG } from '../config'
 import { MOTIVOS, type Motivo } from '../data/conteudo'
 import { Surge, TituloRevela } from '../lib/movimento'
+import { useConteudo } from '../lib/conteudo'
 
 const GIROS = [-2.2, 1.6, -1.2, 2.4, -1.8, 1.1]
 
@@ -54,6 +55,7 @@ function Recorte({ mtv, i }: { mtv: Motivo; i: number }) {
 }
 
 export function PorQueNao() {
+  useConteudo()
   const trilho = useRef<HTMLDivElement>(null)
   const estado = useRef({ pausado: false, visivel: false, arrastando: false, moveu: false, x: 0, scroll: 0, retomar: 0 })
 

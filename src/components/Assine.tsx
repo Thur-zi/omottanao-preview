@@ -6,7 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, animate, m, useReducedMotion } from 'motion/react'
 import { Bell, Check, Lock, MapPin, Megaphone, Send, Stamp } from 'lucide-react'
 import { CONFIG } from '../config'
-import { NOMES_UF, TOTAIS, UFS, resumo, type UF } from '../data/votometro'
+import { NOMES_UF, UFS, resumo, totais, type UF } from '../data/votometro'
+import { useConteudo } from '../lib/conteudo'
 import { TEXTO_CONSENTIMENTO, carregarMunicipios, enviarLead, mascaraWhatsapp, whatsappValido } from '../lib/cadastro'
 import { Combobox, type Opcao } from './Combobox'
 import { useContagem } from '../lib/contagem'
@@ -126,6 +127,10 @@ export function Assine() {
   const [virada, setVirada] = useState(false)
   const [feito, setFeito] = useState<null | { nome: string; uf: UF }>(null)
   const tocouUf = useRef(false)
+  const inicio = useRef(performance.now())
+  const armadilha = useRef<HTMLInputElement>(null)
+  const comecou = useRef(false)
+  useConteudo()
   const cedula = useRef<HTMLDivElement>(null)
   const inclina = useRef<HTMLDivElement>(null)
   const verso = useRef<HTMLDivElement>(null)
@@ -182,14 +187,29 @@ export function Assine() {
     setTentou(true)
     const e = validar()
     if (Object.keys(e).length) {
+      Object.keys(e).forEach((campo) => rastrear('form_erro', { campo }))
       if (cedula.current && !reduz) animate(cedula.current, { x: [0, -10, 9, -6, 4, 0] }, { duration: 0.4 })
       document.getElementById(`f-${Object.keys(e)[0]}`)?.focus()
       return
     }
     setEnviando(true)
     const nomeCidade = municipios.find((o) => o.valor === cidade)?.rotulo ?? ''
-    const r = await enviarLead({ nome, sobrenome, whatsapp: wa, uf: uf as UF, cidade: { codigo_ibge: Number(cidade), nome: nomeCidade } })
+    const r = await enviarLead(
+      { nome, sobrenome, whatsapp: wa, uf: uf as UF, cidade: { codigo_ibge: Number(cidade), nome: nomeCidade } },
+      { tempo: performance.now() - inicio.current, empresa: armadilha.current?.value ?? '' },
+    )
     setEnviando(false)
+    // o servidor recusou um campo: mostra no lugar certo (falha de rede nunca bloqueia a pessoa)
+    const CAMPOS: Record<string, keyof Erros> = { nome: 'nome', sobrenome: 'sobrenome', whatsapp: 'whatsapp', uf: 'uf', cidade: 'cidade', consentimento: 'lgpd' }
+    if (!r.ok && r.motivo && CAMPOS[r.motivo]) {
+      setErros({ [CAMPOS[r.motivo]]: 'Confira este campo.' })
+      rastrear('form_erro', { campo: r.motivo, servidor: true })
+      return
+    }
+    if (!r.ok && r.motivo === 'limite') {
+      setErros({ lgpd: 'Muitas assinaturas desta conexão. Tente de novo mais tarde.' })
+      return
+    }
     rastrear('lead', { uf, ok: r.ok })
     definirUF(uf as UF)
     setFeito({ nome: nome.trim().split(' ')[0], uf: uf as UF })
@@ -285,10 +305,17 @@ export function Assine() {
                 {/* FRENTE */}
                 <form
                   onSubmit={enviar}
+                  onFocusCapture={() => {
+                    if (comecou.current) return
+                    comecou.current = true
+                    rastrear('form_inicio', {}, { unico: 'form_inicio' })
+                  }}
                   noValidate
                   aria-hidden={virada}
                   className="relative col-start-1 row-start-1 rounded-[26px] bg-[#FBFAF6] p-6 text-azul-tinta shadow-[0_60px_120px_-40px_rgba(0,0,0,0.75)] [backface-visibility:hidden] sm:p-9"
                 >
+                  {/* armadilha para robôs: invisível para pessoas */}
+                  <input ref={armadilha} type="text" name="empresa" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
                   {/* serrilhado de cédula */}
                   <span aria-hidden className="absolute inset-x-6 -top-[7px] h-[14px] [background:radial-gradient(circle,#040B26_5px,transparent_5.5px)_0_0/22px_14px_repeat-x]" />
                   {/* papel */}
@@ -393,7 +420,7 @@ export function Assine() {
                         >
                           <MapPin size={15} className="shrink-0" />
                           {NOMES_UF[infoUf.uf]}: {infoUf.cadeiras} deputados, {infoUf.nao} já disseram NÃO.
-                          {CONFIG.previa && TOTAIS.temExemplo && <span className="ml-auto text-[10px] uppercase tracking-wider text-azul-profundo/50">exemplo</span>}
+                          {CONFIG.previa && totais().temExemplo && <span className="ml-auto text-[10px] uppercase tracking-wider text-azul-profundo/50">exemplo</span>}
                         </m.p>
                       )}
                     </AnimatePresence>

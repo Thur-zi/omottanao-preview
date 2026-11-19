@@ -5,20 +5,29 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsc -p tsconfig.functions.json && vite build",
     "build:pages": "tsc -b && vite build --mode pages",
     "preview": "vite preview",
-    "publicar-previa": "bash scripts/publicar-previa.sh"
+    "publicar-previa": "bash scripts/publicar-previa.sh",
+    "publicar": "bash scripts/publicar-cloudflare.sh",
+    "banco:migrar": "npx -y wrangler@4 d1 migrations apply omottanao --remote",
+    "dev:cloudflare": "npx -y wrangler@4 pages dev dist --port 8788"
   },
   "dependencies": {
+    "@fontsource-variable/archivo": "^5.2.5",
+    "@fontsource-variable/inter-tight": "^5.2.5",
     "lenis": "^1.3.27",
     "lucide-react": "^0.462.0",
     "motion": "^14.6.0",
+    "qrcode": "^1.5.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "recharts": "^2.15.4",
     "three": "0.170.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251119.0",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@types/three": "0.170.0",

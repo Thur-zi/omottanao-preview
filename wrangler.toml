@@ -1,0 +1,10 @@
+# Cloudflare Pages: site estático (dist) + Pages Functions (functions/) + banco D1.
+name = "omottanao"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "omottanao"
+database_id = "9ba437be-7824-4016-b902-ebdacabdfada"
+migrations_dir = "migrations"

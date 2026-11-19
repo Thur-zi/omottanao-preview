@@ -133,7 +133,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font: 900 13px/1 Archivo, sans-serif;
+  font: 900 13px/1 'Archivo Variable', Archivo, sans-serif;
   font-stretch: 80%;
   color: #fff;
   text-shadow: 0 1px 8px rgba(4, 11, 38, 0.9);
@@ -141,7 +141,7 @@
   will-change: transform;
 }
 .rotulo-uf b {
-  font: 800 10px/1 'Inter Tight', sans-serif;
+  font: 800 10px/1 'Inter Tight Variable', 'Inter Tight', sans-serif;
   background: #3d7bff;
   border-radius: 999px;
   padding: 3px 6px;

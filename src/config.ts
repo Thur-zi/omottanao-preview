@@ -1,20 +1,26 @@
 /**
- * Configuração de publicação. Tudo que é integração mora aqui.
- * Variáveis VITE_* podem sobrescrever (arquivo .env.production).
+ * Configuração do site. Os valores abaixo são o padrão; no Cloudflare eles chegam do painel
+ * (/api/conteudo) e sobrescrevem estes em tempo de execução.
  */
 const env = import.meta.env
 
+/** No GitHub Pages (prévia estática) não há API: o site usa os dados locais. */
+export const TEM_API = env.MODE !== 'pages'
+
 export const CONFIG = {
-  /** Endpoint do CRM/base da Mobi. Recebe POST com JSON em text/plain (sem preflight de CORS). null = modo demonstração. */
-  endpoint: (env.VITE_CADASTRO_ENDPOINT as string | undefined) || null,
+  /** Endpoint do cadastro (Pages Function). null = modo demonstração. */
+  endpoint: TEM_API ? '/api/lead' : (null as string | null),
+  eventos: TEM_API ? '/api/eventos' : (null as string | null),
+  conteudo: TEM_API ? '/api/conteudo' : (null as string | null),
   /** Número WABA do Luiz: DDI + DDD + número, só dígitos. */
-  whatsappNumero: (env.VITE_WHATSAPP_NUMERO as string | undefined) || '55XXXXXXXXXXX',
-  ga4Id: (env.VITE_GA4_ID as string | undefined) || null,
-  metaPixelId: (env.VITE_META_PIXEL_ID as string | undefined) || null,
+  whatsappNumero: '55XXXXXXXXXXX',
+  ga4Id: null as string | null,
+  metaPixelId: null as string | null,
   versaoConsentimento: 'lgpd-v1-2026-11-18',
   site: 'omottanao.com.br',
-  /** Mostra os selos "dado de exemplo" enquanto a equipe não troca os dados fictícios pelos reais. */
+  /** Mostra os selos "dado de exemplo" enquanto houver dados fictícios. */
   previa: true,
   responsavel: '[NOME / CNPJ DO RESPONSÁVEL]',
   encarregado: { nome: '[NOME DO ENCARREGADO]', email: '[EMAIL]' },
-} as const
+  candidatoFoto: null as string | null,
+}

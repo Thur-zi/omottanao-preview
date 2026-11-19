@@ -2,6 +2,7 @@
  * Votômetro. Regra editorial: só entra quem se posicionou EM PÚBLICO, com fonte.
  * Quem não está listado conta como "a convencer".
  *
+ * No Cloudflare, os registros vêm do painel (/api/conteudo) e substituem estes.
  * ⚠ Os registros abaixo marcados com `exemplo: true` são FICTÍCIOS (nomes genéricos) e existem
  *   só para a prévia mostrar o funcionamento. Apague-os e cadastre os reais.
  */
@@ -58,11 +59,16 @@ export function resumo(uf: UF): Resumo {
   return { uf, nao, motta, convencer: Math.max(0, CADEIRAS[uf] - nao - motta), cadeiras: CADEIRAS[uf], registros }
 }
 
-export const TOTAIS = (() => {
+export function totais() {
   const nao = REGISTROS.filter((r) => r.posicao === 'nao').length
   const motta = REGISTROS.filter((r) => r.posicao === 'motta').length
   return { nao, motta, convencer: 513 - nao - motta, temExemplo: REGISTROS.some((r) => r.exemplo) }
-})()
+}
+
+/** Troca os registros locais pelos do painel (mantém a mesma referência de array). */
+export function substituirRegistros(novos: Registro[]) {
+  REGISTROS.splice(0, REGISTROS.length, ...novos)
+}
 
 /** 0..1: proporção de NÃO na bancada (pinta o mapa). */
 export function intensidade(uf: UF) {
