@@ -14,7 +14,7 @@ type Fase = 'espera' | 'golpe' | 'aberto'
 
 /** Testa do Motta, em fração da foto (x, y do centro), largura da marca e giro horário. */
 const ALVO = { x: 0.52, y: 0.235, largura: 0.56, giro: 12 }
-const PROPORCAO_MARCA = 142 / 460
+const PROPORCAO_MARCA = 160 / 520
 
 const BASE = import.meta.env.BASE_URL
 
@@ -160,6 +160,10 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
     rastrear('carimbo', { local: 'abertura' })
     if (cena.current) {
       await cena.current.bater(impacto)
+      // o carimbo saiu de cena: libera o WebGL da abertura
+      cena.current.dispose()
+      cena.current = null
+      if (tela3d.current) tela3d.current.style.display = 'none'
     } else {
       await new Promise((r) => setTimeout(r, 380))
       impacto()
@@ -325,9 +329,9 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
       <m.div style={{ y: yTitulo, opacity: opTitulo }} className="pointer-events-none absolute inset-x-0 bottom-[12svh] z-20 px-4 text-center md:bottom-[10svh]">
         <h1 className="display whitespace-nowrap text-[15.5vw] leading-[0.8] drop-shadow-[0_10px_40px_rgba(28,3,3,0.55)] md:text-[min(10vw,10.5rem)]">
           {['O', 'MOTTA', 'NÃO.'].map((p, i) => (
-            <span key={p} className="inline-block overflow-hidden pb-[0.06em] align-bottom">
+            <span key={p} className="-mt-[0.24em] inline-block overflow-hidden pb-[0.06em] pt-[0.24em] align-bottom">
               <m.span
-                className={`inline-block ${p === 'NÃO.' ? 'bg-azul px-[0.12em] pt-[0.04em] text-white' : ''}`}
+                className={`inline-block ${p === 'NÃO.' ? 'bg-azul px-[0.12em] pt-[0.16em] text-white' : ''}`}
                 initial={aberto || reduz ? false : { y: '115%' }}
                 animate={abertoAgora ? { y: '0%' } : undefined}
                 transition={{ duration: 1.05, ease: EASE, delay: 0.35 + i * 0.09 }}

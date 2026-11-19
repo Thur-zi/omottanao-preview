@@ -2,11 +2,11 @@
  * Lista suspensa digitável (combobox ARIA): digite para filtrar, setas para navegar,
  * Enter para escolher, Esc para fechar. Busca ignora acentos e maiúsculas.
  */
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, m } from 'motion/react'
 import { ChevronDown, Search } from 'lucide-react'
 
-export type Opcao = { valor: string; rotulo: string; detalhe?: string }
+export type Opcao = { valor: string; rotulo: string; detalhe?: string; busca?: string }
 
 const normalizar = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 
@@ -20,6 +20,8 @@ export function Combobox({
   invalido,
   classeEntrada,
   limite = 80,
+  renderOpcao,
+  permitirLivre,
 }: {
   id: string
   opcoes: Opcao[]
@@ -30,9 +32,13 @@ export function Combobox({
   invalido?: boolean
   classeEntrada: string
   limite?: number
+  /** Desenho próprio de cada opção (ex.: foto + partido). */
+  renderOpcao?: (o: Opcao, ativo: boolean) => ReactNode
+  /** Permite usar o texto digitado quando o nome não está na lista. */
+  permitirLivre?: boolean
 }) {
   const lista = useId()
-  const atual = opcoes.find((o) => o.valor === valor)
+  const atual = opcoes.find((o) => o.valor === valor) ?? (valor.startsWith('livre:') ? { valor, rotulo: valor.slice(6) } : undefined)
   const [texto, setTexto] = useState(atual?.rotulo ?? '')
   const [aberto, setAberto] = useState(false)
   const [ativo, setAtivo] = useState(0)
@@ -53,11 +59,15 @@ export function Combobox({
       const r = normalizar(o.rotulo)
       const v = normalizar(o.valor)
       if (r.startsWith(q) || v === q) comeca.push(o)
-      else if (r.includes(q)) contem.push(o)
+      else if (r.includes(q) || (o.busca && normalizar(o.busca).includes(q))) contem.push(o)
     }
     return [...comeca, ...contem]
   }, [texto, opcoes, atual])
-  const visiveis = filtradas.slice(0, limite)
+  const livre: Opcao | null =
+    permitirLivre && texto.trim().length >= 3 && filtradas.length < 3 && !(atual && texto === atual.rotulo) && !filtradas.some((o) => normalizar(o.rotulo) === normalizar(texto))
+      ? { valor: `livre:${texto.trim()}`, rotulo: texto.trim(), detalhe: 'usar este nome' }
+      : null
+  const visiveis = [...filtradas.slice(0, limite), ...(livre ? [livre] : [])]
 
   useEffect(() => setAtivo(0), [texto])
   useEffect(() => {
@@ -116,7 +126,10 @@ export function Combobox({
           aria-autocomplete="list"
           aria-activedescendant={aberto && visiveis[ativo] ? `${lista}-${ativo}` : undefined}
           aria-invalid={invalido}
-          autoComplete="off"
+          autoComplete="chrome-off"
+          name={`busca-${lista}`}
+          data-lpignore="true"
+          data-1p-ignore
           className={classeEntrada}
           placeholder={carregando ? 'Carregando…' : placeholder}
           value={texto}
@@ -151,13 +164,13 @@ export function Combobox({
             id={lista}
             role="listbox"
             data-lenis-prevent
-            className="absolute left-0 right-0 top-[calc(100%+10px)] z-30 max-h-64 min-w-[220px] overflow-y-auto overscroll-contain rounded-2xl border border-azul-tinta/10 bg-white p-1.5 shadow-[0_24px_60px_-20px_rgba(4,11,38,0.45)]"
+            className="absolute left-0 right-0 top-[calc(100%+10px)] z-30 max-h-72 min-w-[220px] overflow-y-auto overscroll-contain rounded-2xl border border-azul-tinta/10 bg-white p-1.5 shadow-[0_24px_60px_-20px_rgba(4,11,38,0.45)]"
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.16 }}
           >
-            {visiveis.length === 0 && (
+            {visiveis.length === 0 && !livre && (
               <li className="flex items-center gap-2 px-3 py-3 text-[14px] text-azul-tinta/50">
                 <Search size={15} /> Nada encontrado para “{texto}”
               </li>
@@ -176,8 +189,14 @@ export function Combobox({
                   i === ativo ? 'bg-azul-gelo text-azul-profundo' : 'text-azul-tinta'
                 }`}
               >
-                <span>{o.rotulo}</span>
-                {o.detalhe && <span className="text-[12px] font-bold text-azul-tinta/40">{o.detalhe}</span>}
+                {renderOpcao && !o.valor.startsWith('livre:') ? (
+                  renderOpcao(o, i === ativo)
+                ) : (
+                  <>
+                    <span>{o.rotulo}</span>
+                    {o.detalhe && <span className="text-[12px] font-bold text-azul-tinta/40">{o.detalhe}</span>}
+                  </>
+                )}
               </li>
             ))}
             {filtradas.length > limite && <li className="px-3 py-2 text-[12px] text-azul-tinta/45">Continue digitando para ver mais…</li>}

@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react'
 import { RolagemSuave } from './lib/movimento'
 import { Abertura } from './components/Abertura'
 import { Topo } from './components/Topo'
-import { Contexto, Letreiro } from './components/Contexto'
+import { Contexto } from './components/Contexto'
 import { BarraFixa } from './components/Rodape'
 import { Assine } from './components/Assine'
 
@@ -34,11 +34,6 @@ export default function App() {
       <Topo visivel={aberto} />
       <main>
         <Abertura aberto={abertoNaCarga} aoAbrir={() => setAberto(true)} />
-        <div className="relative z-20 -mb-6 overflow-hidden py-2">
-          <div className="-mx-[5%] -rotate-[2deg]">
-            <Letreiro />
-          </div>
-        </div>
         <Assine />
         <Contexto />
         {pronto && (

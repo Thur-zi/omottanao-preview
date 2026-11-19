@@ -90,6 +90,7 @@ export class CenaMapa {
   private raio = new THREE.Raycaster()
   private ponteiro = new THREE.Vector2(9, 9)
   private ponteiroSujo = false
+  private sujo = true
   private passando: string | null = null
   private selecionado: string | null = null
   private olhar = new THREE.Vector3(0, -0.5, 0)
@@ -118,7 +119,7 @@ export class CenaMapa {
     destaque?: string | null,
   ) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' })
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.grosso ? 1.5 : 2))
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.grosso ? 1.25 : 1.5))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
     this.scene.fog = new THREE.Fog(NAVY, 16, 42)
@@ -182,9 +183,9 @@ export class CenaMapa {
 
     // nuvens ambiente: anel em volta do mapa, acima dele
     const tex = texturaNuvem()
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 10; i++) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.22 + Math.random() * 0.25 }))
-      const a = (i / 16) * Math.PI * 2 + Math.random() * 0.3
+      const a = (i / 10) * Math.PI * 2 + Math.random() * 0.3
       const r = 5.2 + Math.random() * 3
       s.position.set(Math.cos(a) * r, Math.sin(a) * r * 0.9, 1.2 + Math.random() * 2.6)
       const esc = 3 + Math.random() * 3.5
@@ -193,7 +194,7 @@ export class CenaMapa {
       this.nuvens.push({ s, v: 0.08 + Math.random() * 0.12, base: s.position.x })
     }
     // nuvens do voo (invisíveis até a câmera atravessar)
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 18; i++) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0 }))
       const esc = 2.6 + Math.random() * 3
       s.scale.set(esc * 1.5, esc, 1)
@@ -243,6 +244,7 @@ export class CenaMapa {
       this.camera.position.copy(this.posBase)
       this.camera.lookAt(this.olhar)
     }
+    this.sujo = true
   }
 
   private mover = (e: PointerEvent) => {
@@ -251,10 +253,13 @@ export class CenaMapa {
     this.sway.x = this.ponteiro.x
     this.sway.y = this.ponteiro.y
     this.ponteiroSujo = e.pointerType !== 'touch'
+    this.sujo = true
   }
   private sair = () => {
     this.ponteiro.set(9, 9)
+    this.sway.x = this.sway.y = 0
     this.ponteiroSujo = true
+    this.sujo = true
   }
   private clicar = (e: MouseEvent) => {
     if (this.voando || this.selecionado) return
@@ -276,20 +281,15 @@ export class CenaMapa {
     const loop = () => {
       if (!this.rodando) return
       requestAnimationFrame(loop)
-      if (!this.visivel) return
-      this.quadro++
-      // no celular, parado, 30 fps bastam
-      if (this.grosso && !this.voando && this.quadro % 2) return
+      // renderiza só quando algo muda (ponteiro, transição, redimensionamento): parado, custo zero
+      if (!this.visivel || (!this.sujo && !this.voando)) return
       this.passo()
     }
     requestAnimationFrame(loop)
   }
 
   private passo() {
-    const t = this.relogio.getElapsedTime()
-    for (const n of this.nuvens) {
-      n.s.position.x = n.base + Math.sin(t * n.v + n.base) * 0.9
-    }
+    this.sujo = false
     if (this.ponteiroSujo && !this.voando && !this.selecionado) {
       this.ponteiroSujo = false
       const uf = this.pegar()
@@ -300,21 +300,19 @@ export class CenaMapa {
     }
     for (const e of this.estados.values()) {
       const quer = e.uf === this.selecionado ? 0.35 : e.uf === this.passando ? 0.22 : 0
-      e.alvoZ = lerp(e.alvoZ, quer, 0.15)
+      const brilho = e.uf === this.passando || e.uf === this.selecionado ? 0.45 : 0
+      e.alvoZ = lerp(e.alvoZ, quer, 0.2)
       e.grupo.position.z = e.alvoZ
-      e.topo.emissiveIntensity = lerp(e.topo.emissiveIntensity, e.uf === this.passando || e.uf === this.selecionado ? 0.45 : 0, 0.15)
+      e.topo.emissiveIntensity = lerp(e.topo.emissiveIntensity, brilho, 0.2)
+      // ainda em movimento? então mais um quadro
+      if (Math.abs(e.alvoZ - quer) > 0.002 || Math.abs(e.topo.emissiveIntensity - brilho) > 0.01) this.sujo = true
     }
     if (!this.voando && !this.selecionado) {
-      // leve balanço da câmera
-      const alvo = this.posBase.clone().add(new THREE.Vector3(this.sway.x * 0.8 + Math.sin(t * 0.25) * 0.4, this.sway.y * 0.5, 0))
-      this.camera.position.lerp(alvo, 0.04)
+      // paralaxe leve guiada pelo mouse (só renderiza enquanto ele se move)
+      const alvo = this.posBase.clone().add(new THREE.Vector3(this.sway.x * 0.8, this.sway.y * 0.5, 0))
+      this.camera.position.lerp(alvo, 0.12)
+      if (this.camera.position.distanceTo(alvo) > 0.01) this.sujo = true
       this.camera.lookAt(this.olhar)
-    } else if (this.selecionado && !this.voando) {
-      // balanço lento em volta do ponto de enquadramento
-      const r = this.camera.position.clone().sub(this.olharSel)
-      r.applyAxisAngle(new THREE.Vector3(0, 0, 1), Math.sin(t * 0.35) * 0.0012)
-      this.camera.position.copy(this.olharSel).add(r)
-      this.camera.lookAt(this.olharSel)
     }
     this.renderer.render(this.scene, this.camera)
     this.atualizarRotulos()
@@ -381,6 +379,7 @@ export class CenaMapa {
     }, ease.inOutCubic)
     this.nuvensVoo.forEach((n) => (n.s.visible = false))
     this.voando = false
+    this.sujo = true
   }
 
   async voltar() {
@@ -399,6 +398,7 @@ export class CenaMapa {
       for (const o of this.estados.values()) o.topo.color.copy((o.topo.userData.de as THREE.Color).clone().lerp(o.topo.userData.para as THREE.Color, k))
     }, ease.inOutCubic)
     this.voando = false
+    this.sujo = true
   }
 
   private bezier(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, t: number) {
@@ -412,6 +412,7 @@ export class CenaMapa {
 
   definirVisivel(v: boolean) {
     this.visivel = v
+    if (v) this.sujo = true
   }
 
   dispose() {

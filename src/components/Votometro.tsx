@@ -150,7 +150,7 @@ function PainelTriplo({ uf, fechar }: { uf: UF; fechar: () => void }) {
   const motta = r.registros.filter((x) => x.posicao === 'motta')
   return (
     <m.div
-      className="absolute inset-x-0 bottom-0 z-20 max-h-[64%] overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-white/10 bg-azul-fundo/95 p-4 pb-6 shadow-flutua backdrop-blur-xl sm:p-7 lg:inset-y-4 lg:left-auto lg:right-4 lg:max-h-none lg:w-[min(660px,56%)] lg:rounded-[28px] lg:border"
+      className="absolute inset-x-0 bottom-0 z-20 max-h-[64%] overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-white/10 bg-azul-fundo/[0.97] p-4 pb-6 shadow-flutua sm:p-7 lg:inset-y-4 lg:left-auto lg:right-4 lg:max-h-none lg:w-[min(660px,56%)] lg:rounded-[28px] lg:border"
       initial={{ y: '105%', opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: '105%', opacity: 0, transition: { duration: 0.5, ease: EASE } }}
@@ -360,7 +360,7 @@ export function Votometro() {
         </div>
 
         {/* lista de estados: alternativa acessível e alvo grande (Fitts) */}
-        <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-2" role="list" aria-label="Estados">
+        <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] gap-2" role="list" aria-label="Estados">
           {UFS.map((uf) => {
             const r = resumo(uf)
             return (
@@ -369,15 +369,28 @@ export function Votometro() {
                 role="listitem"
                 type="button"
                 onClick={() => selecionar(uf)}
-                className={`relative h-14 rounded-xl border font-titulo text-xl font-black transition [font-stretch:80%] hover:border-azul-vivo hover:bg-azul/20 ${
+                className={`group flex h-14 items-center gap-2.5 rounded-xl border px-3 text-left transition hover:border-azul-vivo hover:bg-azul/20 ${
                   uf === ufPessoa ? 'border-azul-vivo bg-azul/25' : 'border-white/10 bg-white/[0.03]'
                 }`}
                 aria-label={`${NOMES_UF[uf]}: ${r.nao} não, ${r.motta} com Motta, ${CADEIRAS[uf]} cadeiras`}
               >
-                {uf}
-                {r.nao > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-azul-vivo px-1.5 font-sans text-[10px] font-extrabold">{r.nao}</span>
-                )}
+                <img
+                  src={`${BASE}bandeiras/${uf}.webp`}
+                  alt=""
+                  width={30}
+                  height={21}
+                  loading="lazy"
+                  className="h-[21px] w-[30px] shrink-0 rounded-[3px] object-cover shadow-[0_0_0_1px_rgba(255,255,255,0.18)] transition-transform group-hover:scale-110"
+                />
+                <span className="font-titulo text-[19px] font-black leading-none [font-stretch:80%]">{uf}</span>
+                <span
+                  className={`ml-auto inline-flex h-6 min-w-[26px] items-center justify-center rounded-full px-2 font-sans text-[11px] font-extrabold leading-none tabular-nums ${
+                    r.nao > 0 ? 'bg-azul-vivo text-white' : 'bg-white/[0.06] text-white/35'
+                  }`}
+                  title="disseram NÃO"
+                >
+                  {r.nao}
+                </span>
               </button>
             )
           })}

@@ -35,7 +35,7 @@ export function Topo({ visivel }: { visivel: boolean }) {
       >
         <div
           className={`transition-[background-color,backdrop-filter,box-shadow] duration-500 ${
-            solido ? 'bg-azul-fundo/85 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl' : 'bg-transparent'
+            solido ? 'bg-azul-fundo/95 shadow-[0_1px_0_rgba(255,255,255,0.06)]' : 'bg-transparent'
           }`}
         >
           <div className="container flex h-[68px] items-center justify-between gap-6 text-white">

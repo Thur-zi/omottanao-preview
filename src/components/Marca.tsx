@@ -12,7 +12,7 @@ export function Logo({ className = '' }: { className?: string }) {
 /** A marca do carimbo, com tinta irregular (SVG + ruído). */
 export function Impressao({ className = '', cor = '#ffffff', id = 'tinta' }: { className?: string; cor?: string; id?: string }) {
   return (
-    <svg className={className} viewBox="0 0 460 142" aria-hidden>
+    <svg className={className} viewBox="0 0 520 160" aria-hidden>
       <defs>
         <filter id={id} x="-6%" y="-12%" width="112%" height="124%">
           <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="warp" />
@@ -23,17 +23,17 @@ export function Impressao({ className = '', cor = '#ffffff', id = 'tinta' }: { c
         </filter>
       </defs>
       <g filter={`url(#${id})`} fill={cor}>
-        <rect x="8" y="8" width="444" height="126" rx="14" fill="none" stroke={cor} strokeWidth="11" />
-        <rect x="24" y="24" width="412" height="94" rx="7" fill="none" stroke={cor} strokeWidth="3" />
+        <rect x="8" y="8" width="504" height="144" rx="16" fill="none" stroke={cor} strokeWidth="11" />
+        <rect x="26" y="26" width="468" height="108" rx="8" fill="none" stroke={cor} strokeWidth="3" />
         <text
-          x="230"
-          y="106"
+          x="260"
+          y="114"
           textAnchor="middle"
           fontFamily="Archivo, 'Arial Narrow', sans-serif"
           fontWeight="900"
-          fontSize="92"
+          fontSize="74"
           style={{ fontStretch: '70%' }}
-          letterSpacing="2"
+          letterSpacing="4"
         >
           MOTTA NÃO
         </text>

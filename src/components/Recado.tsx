@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Download, Share2 } from 'lucide-react'
 import { CONFIG } from '../config'
-import { NOMES_UF, REGISTROS, UFS, type UF } from '../data/votometro'
+import { NOMES_UF, UFS, type UF } from '../data/votometro'
+import { carregarDeputados, partido, type Deputado } from '../data/partidos'
+import { Combobox, type Opcao } from './Combobox'
+import { SeloPartido } from './SeloPartido'
 import { definirUF, useUF } from '../lib/estado'
 import { FRASES_RESUMO, desenharCard, type Formato } from '../lib/desenharCard'
 import { Surge, TituloRevela } from '../lib/movimento'
@@ -12,7 +15,12 @@ const BASE = import.meta.env.BASE_URL
 export function Recado() {
   const ufGlobal = useUF()
   const [uf, setUf] = useState<UF | ''>(ufGlobal ?? '')
-  const [deputado, setDeputado] = useState('')
+  const [depValor, setDepValor] = useState('')
+  const [deputados, setDeputados] = useState<Deputado[]>([])
+  const fotoDep = useRef<HTMLImageElement | null>(null)
+  const [fotoPronta, setFotoPronta] = useState(0)
+  const depSel = deputados.find((d) => String(d.id) === depValor) ?? null
+  const deputado = depSel ? depSel.nome : depValor.startsWith('livre:') ? depValor.slice(6) : ''
   const [nome, setNome] = useState('')
   const [frase, setFrase] = useState(0)
   const [formato, setFormato] = useState<Formato>('feed')
@@ -24,6 +32,27 @@ export function Recado() {
   useEffect(() => {
     if (ufGlobal) setUf(ufGlobal)
   }, [ufGlobal])
+
+  // lista oficial dos 513 deputados em exercício (carrega quando a seção monta)
+  useEffect(() => {
+    carregarDeputados().then(setDeputados).catch(() => setDeputados([]))
+  }, [])
+
+  // foto do deputado escolhido entra no card
+  useEffect(() => {
+    fotoDep.current = null
+    if (!depSel?.foto) return setFotoPronta((n) => n + 1)
+    const i = new Image()
+    i.onload = () => {
+      fotoDep.current = i
+      setFotoPronta((n) => n + 1)
+    }
+    i.src = `${BASE}deputados/${depSel.id}.webp`
+  }, [depSel?.id])
+
+  const opcoesDep: Opcao[] = deputados
+    .filter((d) => !uf || d.uf === uf)
+    .map((d) => ({ valor: String(d.id), rotulo: d.nome, detalhe: `${d.partido} · ${d.uf}`, busca: `${d.partido} ${partido(d.partido).nome}` }))
 
   useEffect(() => {
     const i = new Image()
@@ -37,9 +66,9 @@ export function Recado() {
 
   useEffect(() => {
     if (!tela.current) return
-    const t = setTimeout(() => desenharCard(tela.current!, img.current, { deputado, nome, uf, frase, formato, site: CONFIG.site }), 60)
+    const t = setTimeout(() => desenharCard(tela.current!, img.current, { deputado, nome, uf, frase, formato, site: CONFIG.site, foto: fotoDep.current, partido: depSel?.partido }), 60)
     return () => clearTimeout(t)
-  }, [deputado, nome, uf, frase, formato, pronto])
+  }, [deputado, nome, uf, frase, formato, pronto, fotoPronta])
 
   /* inclinação 3D da prévia */
   const inclinar = (e: React.PointerEvent) => {
@@ -52,7 +81,6 @@ export function Recado() {
   }
   const soltar = () => moldura.current && (moldura.current.style.transform = '')
 
-  const sugestoes = REGISTROS.filter((r) => !r.exemplo && (!uf || r.uf === uf)).map((r) => r.nome)
   const arquivo = () => `omottanao-${(deputado || 'card').normalize('NFD').replace(/[^\w]+/g, '-').toLowerCase()}.png`
   const blob = () => new Promise<Blob | null>((r) => tela.current!.toBlob(r, 'image/png'))
 
@@ -101,31 +129,65 @@ export function Recado() {
 
         <div className="mt-14 grid gap-12 lg:grid-cols-[1fr_440px] lg:gap-20">
           <Surge as="div" className="space-y-7">
-            <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
-              <label className="block">
-                <span className="mb-2 block text-[15px] font-bold">Em quem você votou para deputado federal?</span>
-                <input className="campo" value={deputado} onChange={(e) => setDeputado(e.target.value.slice(0, 40))} placeholder="Nome do deputado" list="deputados" autoComplete="off" />
-                <datalist id="deputados">{sugestoes.map((n) => <option key={n} value={n} />)}</datalist>
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-[15px] font-bold">Estado</span>
-                <select
-                  className="campo"
-                  value={uf}
-                  onChange={(e) => {
-                    const v = e.target.value as UF | ''
-                    setUf(v)
-                    if (v) definirUF(v)
-                  }}
-                >
-                  <option value="">UF</option>
-                  {UFS.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div className="grid gap-4 sm:grid-cols-[170px_1fr]">
+              <div>
+                <label htmlFor="r-uf" className="mb-2 block text-[15px] font-bold">
+                  Estado
+                </label>
+                <div className="campo flex items-center pr-1 focus-within:border-azul focus-within:ring-4 focus-within:ring-azul/20">
+                  <Combobox
+                    id="r-uf"
+                    opcoes={UFS.map((u) => ({ valor: u, rotulo: u, detalhe: NOMES_UF[u] }))}
+                    valor={uf}
+                    aoEscolher={(v) => {
+                      setUf(v as UF)
+                      definirUF(v as UF)
+                      setDepValor('')
+                    }}
+                    placeholder="UF"
+                    classeEntrada="h-full w-full bg-transparent text-[17px] font-semibold outline-none placeholder:font-medium placeholder:text-azul-tinta/35"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="r-dep" className="mb-2 block text-[15px] font-bold">
+                  Em quem você votou para deputado federal?
+                </label>
+                <div className="campo flex items-center gap-3 pr-1 focus-within:border-azul focus-within:ring-4 focus-within:ring-azul/20">
+                  {depSel && (
+                    <img src={`${BASE}deputados/${depSel.id}.webp`} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover object-top ring-2 ring-azul/20" />
+                  )}
+                  <Combobox
+                    key={uf}
+                    id="r-dep"
+                    opcoes={opcoesDep}
+                    valor={depValor}
+                    aoEscolher={setDepValor}
+                    placeholder={deputados.length ? (uf ? `Deputados de ${uf}` : 'Digite o nome do deputado') : 'Carregando deputados…'}
+                    carregando={!deputados.length}
+                    permitirLivre
+                    limite={60}
+                    classeEntrada="h-full w-full bg-transparent text-[17px] font-semibold outline-none placeholder:font-medium placeholder:text-azul-tinta/35"
+                    renderOpcao={(o) => {
+                      const d = deputados.find((x) => String(x.id) === o.valor)
+                      if (!d) return <span>{o.rotulo}</span>
+                      return (
+                        <span className="flex w-full items-center gap-3">
+                          <img src={`${BASE}deputados/${d.id}.webp`} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-full bg-azul-gelo object-cover object-top" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[15px] font-bold">{d.nome}</span>
+                            <span className="block text-[12px] font-semibold text-azul-tinta/50">
+                              {partido(d.partido).nome} · {d.uf}
+                            </span>
+                          </span>
+                          <SeloPartido sigla={d.partido} className="h-7 shrink-0" />
+                        </span>
+                      )
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-[12.5px] text-azul-tinta/50">Lista oficial da Câmara com os 513 deputados em exercício. Não achou? Digite o nome e use assim mesmo.</p>
+              </div>
             </div>
             <label className="block">
               <span className="mb-2 block text-[15px] font-bold">

@@ -1,7 +1,7 @@
 /** Desenha o card "Cobre o seu deputado" num canvas (roda 100% no aparelho). */
 
 export type Formato = 'feed' | 'status'
-export type DadosCard = { deputado: string; nome: string; uf: string; frase: number; formato: Formato; site: string }
+export type DadosCard = { deputado: string; nome: string; uf: string; frase: number; formato: Formato; site: string; foto?: HTMLImageElement | null; partido?: string }
 
 export const FRASES = [
   (d: string) => ['Eu votei em', `${d}.`, 'Não votei para', 'eleger o Motta.'],
@@ -37,10 +37,10 @@ function carimbo(g: CanvasRenderingContext2D, cx: number, cy: number, larg: numb
   g.beginPath()
   g.roundRect(-larg / 2 + larg * 0.035, -alt / 2 + larg * 0.035, larg - larg * 0.07, alt - larg * 0.07, r / 2)
   g.stroke()
-  fonte(g, 900, alt * 0.66)
+  fonte(g, 900, alt * 0.5)
   g.textAlign = 'center'
   g.textBaseline = 'middle'
-  g.fillText('MOTTA NÃO', 0, alt * 0.05)
+  g.fillText('MOTTA NÃO', 0, alt * 0.08)
   // falhas de tinta
   g.globalCompositeOperation = 'destination-out'
   for (let i = 0; i < 260; i++) {
@@ -76,6 +76,29 @@ export function desenharCard(cv: HTMLCanvasElement, img: HTMLImageElement | null
   vinheta.addColorStop(1, 'rgba(4,11,38,1)')
   g.fillStyle = vinheta
   g.fillRect(0, 0, W, altoFoto)
+
+  // foto oficial do deputado escolhido, como um retrato preso no cartaz
+  if (d.foto) {
+    const fw = 190, fh = 253
+    const fx = W - pad - fw + 10, fy = altoFoto - fh - 70
+    g.save()
+    g.translate(fx + fw / 2, fy + fh / 2)
+    g.rotate((-4 * Math.PI) / 180)
+    g.fillStyle = '#fff'
+    g.shadowColor = 'rgba(0,0,0,0.45)'
+    g.shadowBlur = 30
+    g.fillRect(-fw / 2 - 8, -fh / 2 - 8, fw + 16, fh + 16 + (d.partido ? 44 : 0))
+    g.shadowBlur = 0
+    g.drawImage(d.foto, -fw / 2, -fh / 2, fw, fh)
+    if (d.partido) {
+      g.fillStyle = '#040B26'
+      g.font = '800 26px "Inter Tight", Inter, sans-serif'
+      g.textAlign = 'center'
+      g.textBaseline = 'middle'
+      g.fillText(`${d.partido} · ${d.uf || ''}`.replace(/ · $/, ''), 0, fh / 2 + 22)
+    }
+    g.restore()
+  }
 
   // metade de baixo: o recado
   g.fillStyle = '#040B26'

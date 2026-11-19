@@ -113,7 +113,7 @@ export class CenaCarimbo {
   constructor(private canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' })
     const grosso = window.matchMedia('(pointer: coarse)').matches
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, grosso ? 1.75 : 2))
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, grosso ? 1.5 : 1.75))
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
     this.renderer.toneMappingExposure = 0.92
     this.renderer.outputColorSpace = THREE.SRGBColorSpace

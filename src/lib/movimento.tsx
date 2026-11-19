@@ -49,8 +49,8 @@ export function Surge({ children, className, atraso = 0, y = 40, as = 'div' }: {
   return (
     <M
       className={className}
-      initial={reduz ? false : { opacity: 0, y, filter: 'blur(8px)' }}
-      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      initial={reduz ? false : { opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '0px 0px -12% 0px' }}
       transition={{ duration: 0.9, ease: EASE, delay: atraso }}
     >
@@ -85,7 +85,7 @@ export function TituloRevela({
     <span ref={ref} className={className} aria-label={texto}>
       {palavras.map((p, i) => (
         <Fragment key={i}>
-          <span aria-hidden className="-mb-[0.12em] inline-block overflow-hidden pb-[0.12em] pr-[0.04em] align-bottom">
+          <span aria-hidden className="-mb-[0.12em] -mt-[0.22em] inline-block overflow-hidden pb-[0.12em] pr-[0.04em] pt-[0.22em] align-bottom">
             <m.span
               className={`inline-block ${destaque.includes(p) ? classeDestaque : ''}`}
               initial={reduz ? false : { y: '115%', rotate: 5 }}

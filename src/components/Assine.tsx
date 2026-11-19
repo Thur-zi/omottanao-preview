@@ -218,8 +218,7 @@ export function Assine() {
     <section id="assine" className="arco relative z-10 overflow-hidden bg-azul-fundo pb-24 pt-24 text-white sm:pb-32 sm:pt-32">
       {/* fundo: brilho, grade e palavra gigante */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -right-[20%] top-[10%] h-[70vw] w-[70vw] rounded-full bg-azul/25 blur-[120px]" />
-        <div className="absolute -left-[25%] bottom-0 h-[50vw] w-[50vw] rounded-full bg-azul-vivo/10 blur-[110px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_85%_25%,rgba(31,79,224,0.32),transparent_70%),radial-gradient(45%_40%_at_5%_95%,rgba(61,123,255,0.14),transparent_70%)]" />
         <div className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(80%_70%_at_60%_40%,#000,transparent)]" />
         <div className="display contorno absolute -bottom-[6vw] right-[-2vw] select-none text-[30vw] leading-none text-white/[0.06]">NÃO</div>
       </div>
@@ -298,12 +297,11 @@ export function Assine() {
                   <div className="relative flex items-start justify-between gap-4">
                     <div>
                       <p className="font-sans text-[10px] font-extrabold uppercase tracking-[0.24em] text-azul-tinta/45">Presidência da Câmara · 2027</p>
-                      <p className="display mt-1.5 text-[2.6rem] text-azul-tinta sm:text-[3rem]">
-                        Cédula do <span className="bg-azul px-[0.12em] text-white">NÃO</span>
-                      </p>
+                      <p className="display mt-2 text-[2.5rem] leading-[0.9] text-azul-tinta sm:text-[2.9rem]">Abaixo-assinado</p>
+                      <p className="display mt-1.5 inline-block bg-azul px-[0.14em] pt-[0.12em] text-[1.9rem] leading-[0.95] text-white sm:text-[2.2rem]">O Motta não</p>
                     </div>
                     <div className="text-right font-sans">
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-azul-tinta/40">Nº</p>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-azul-tinta/40">Assinatura nº</p>
                       <p className="font-mono text-[15px] font-bold tracking-wider text-azul">{serie}</p>
                     </div>
                   </div>
@@ -314,11 +312,11 @@ export function Assine() {
                       <m.div className="h-full rounded-full bg-[linear-gradient(90deg,#1F4FE0,#3D7BFF)]" animate={{ width: `${Math.max(4, progresso * 100)}%` }} transition={{ duration: 0.6, ease: EASE }} />
                     </div>
                     <p className="mt-2 text-[12px] font-semibold text-azul-tinta/50">
-                      {progresso === 1 ? 'Pronta para o carimbo.' : `Seu NÃO está ${Math.round(progresso * 100)}% pronto.`}
+                      {progresso === 1 ? 'Tudo certo. É só carimbar.' : `Sua assinatura está ${Math.round(progresso * 100)}% pronta.`}
                     </p>
                   </div>
 
-                  <div className="relative mt-7 space-y-6">
+                  <div className="relative z-20 mt-7 space-y-6">
                     <div className="grid gap-6 sm:grid-cols-2">
                       <Linha id="f-nome" rotulo="Primeiro nome" ok={ok.nome} erro={erros.nome}>
                         <input id="f-nome" className={entrada} value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="given-name" maxLength={40} placeholder="Ex.: Ana" aria-invalid={!!erros.nome} />
@@ -363,8 +361,8 @@ export function Assine() {
                         {uf && (
                           <m.div
                             key="cidade"
-                            initial={{ opacity: 0, y: -10, filter: 'blur(6px)' }}
-                            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.45, ease: EASE }}
                           >
@@ -487,10 +485,10 @@ export function Assine() {
                         animate={virada ? { scale: 1, opacity: 1 } : undefined}
                         transition={{ type: 'spring', stiffness: 380, damping: 18, delay: 0.75 }}
                       >
-                        NÃO registrado
+                        Seu NÃO registrado
                       </m.div>
                       <h3 className="titulo-md mt-7 sm:text-5xl">Valeu, {feito.nome}.</h3>
-                      <p className="mt-3 text-white/75">Sua cédula nº {serie} foi registrada para {NOMES_UF[feito.uf]}.</p>
+                      <p className="mt-3 text-white/75">Sua assinatura nº {serie} entrou no abaixo-assinado de {NOMES_UF[feito.uf]}.</p>
                       <ol className="mt-7 space-y-3.5">
                         {['Seu NÃO foi registrado.', 'Entre no WhatsApp do Luiz para saber quem cobrar.', 'Gere seu card e cobre o seu deputado.'].map((t, i) => (
                           <li key={i} className="flex items-center gap-3.5 text-[15.5px]">
