@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#C61F1F" />
+    <!-- PRÉVIA: tirar o noindex e apagar public/robots.txt antes de publicar em omottanao.com.br -->
+    <meta name="robots" content="noindex, nofollow" />
+    <title>O Motta Não. · Presidência da Câmara 2027</title>
+    <meta name="description" content="Em 1º de fevereiro, a Câmara elege o presidente em voto secreto. Veja quem já disse NÃO ao Motta e cobre o seu deputado." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="O MOTTA NÃO." />
+    <meta property="og:description" content="Veja quem já disse NÃO ao Motta e cobre o seu deputado." />
+    <meta property="og:image" content="og.jpg" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="preload" as="image" href="motta-760.webp" imagesrcset="motta-760.webp 760w, motta-1400.webp 1400w" imagesizes="(min-width: 900px) 70vh, 92vw" fetchpriority="high" />
+    <script>
+      /* Decide antes do primeiro pixel se a abertura cinematográfica roda (1ª visita da sessão, sem "reduzir movimento"). */
+      (function () {
+        var d = document.documentElement
+        try {
+          // a abertura é a porta de entrada: recarregar sempre volta ao topo
+          if (!location.hash && 'scrollRestoration' in history) history.scrollRestoration = 'manual'
+          var reduz = matchMedia('(prefers-reduced-motion: reduce)').matches
+          var jaViu = sessionStorage.getItem('omn:carimbado') === '1'
+          d.classList.add(reduz || jaViu || location.hash ? 'sem-abertura' : 'com-abertura')
+        } catch (e) { d.classList.add('sem-abertura') }
+      })()
+    </script>
+    <script type="module" crossorigin src="/omottanao-preview/assets/index-5CRnVkeY.js"></script>
+    <link rel="stylesheet" crossorigin href="/omottanao-preview/assets/index-DXTN6LbE.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding:40px;font-family:sans-serif;background:#C61F1F;color:#fff;min-height:100vh">
+        <h1>O MOTTA NÃO.</h1><p>Ative o JavaScript para ver o votômetro e assinar o NÃO.</p>
+      </div>
+    </noscript>
+  </body>
+</html>
