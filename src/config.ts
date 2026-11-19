@@ -22,5 +22,6 @@ export const CONFIG = {
   previa: true,
   responsavel: '[NOME / CNPJ DO RESPONSÁVEL]',
   encarregado: { nome: '[NOME DO ENCARREGADO]', email: '[EMAIL]' },
+  /** Foto do candidato; o painel pode trocar. Padrão: foto oficial da Câmara (CC BY 3.0). */
   candidatoFoto: null as string | null,
 }

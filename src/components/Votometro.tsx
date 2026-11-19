@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, m, useInView } from 'motion/react'
-import { ArrowLeft, MapPin, MessageCircle, X } from 'lucide-react'
+import { MapPin, MessageCircle, Send, X } from 'lucide-react'
 import { CONFIG } from '../config'
 import { CADEIRAS, NOMES_UF, UFS, intensidade, resumo, totais, type Registro, type UF } from '../data/votometro'
 import { carregarConteudo, useConteudo } from '../lib/conteudo'
@@ -39,24 +39,12 @@ function Hemiciclo() {
   const marco = cadeiras[256]
   return (
     <svg ref={ref} viewBox="0 0 200 108" className="w-full" role="img" aria-label={`${nao} de 513 deputados já disseram não; ${motta} declararam apoio ao Motta. Maioria: 257.`}>
-      {cadeiras.map((p, i) => {
-        const cor = i < motta ? '#E02A2A' : i >= 513 - nao ? '#3D7BFF' : '#2A3a64'
-        return (
-          <circle
-            key={i}
-            cx={p.x}
-            cy={p.y}
-            r={2.05}
-            fill={cor}
-            style={{
-              opacity: visto ? 1 : 0,
-              transform: visto ? 'none' : 'translateY(6px)',
-              transformBox: 'fill-box',
-              transition: `opacity .5s ${(i % 513) * 1.6}ms, transform .6s cubic-bezier(.22,1,.36,1) ${(i % 513) * 1.6}ms`,
-            }}
-          />
-        )
-      })}
+      {/* uma transição só para o conjunto (513 transições separadas travavam o celular) */}
+      <g style={{ opacity: visto ? 1 : 0, transform: visto ? 'none' : 'translateY(6px)', transition: 'opacity .8s ease-out, transform .9s cubic-bezier(.22,1,.36,1)' }}>
+        {cadeiras.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={2.05} fill={i < motta ? '#E02A2A' : i >= 513 - nao ? '#3D7BFF' : '#2A3a64'} />
+        ))}
+      </g>
       {marco && (
         <g style={{ opacity: visto ? 1 : 0, transition: 'opacity .6s 1s' }}>
           <line x1={100} y1={100} x2={100 + (marco.x - 100) * 1.06} y2={100 + (marco.y - 100) * 1.06} stroke="#FFFFFF" strokeWidth={0.5} strokeDasharray="1.4 1.4" />
@@ -85,69 +73,67 @@ const iniciais = (n: string) =>
 function Deputado({ r, i }: { r: Registro; i: number }) {
   return (
     <m.li
-      className="flex h-9 items-center gap-2 rounded-lg bg-white/[0.05] pl-1 pr-2"
+      className="flex h-10 min-w-0 items-center gap-2.5 rounded-xl bg-white/[0.05] pl-1 pr-3"
       title={`${r.nome} (${r.partido}) · Fonte: ${r.fonte}`}
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, ease: EASE, delay: 0.3 + i * 0.04 }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: EASE, delay: 0.25 + Math.min(i, 8) * 0.04 }}
     >
-      <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-white/10 font-sans text-[9.5px] font-extrabold ring-[1.5px] ring-current">
+      <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-white/10 font-sans text-[10px] font-extrabold ring-[1.5px] ring-current">
         {r.foto ? <img src={r.foto} alt="" className="h-full w-full object-cover" loading="lazy" /> : iniciais(r.nome) || '?'}
       </span>
-      <span className="min-w-0 truncate text-[12.5px] font-bold text-white">{r.nome}</span>
+      <span className="min-w-0 flex-1 truncate text-[13.5px] font-bold text-white">{r.nome}</span>
+      {r.partido && <span className="shrink-0 text-[11px] font-bold text-white/45">{r.partido}</span>}
     </m.li>
   )
 }
 
-const VISIVEIS = 4
+type Tipo = 'motta' | 'convencer' | 'nao'
+const TIPOS = {
+  motta: { titulo: 'Querem o Motta', curto: 'Com Motta', cor: 'text-[#FF6B6B]', barra: 'bg-vermelho-vivo', ponto: 'bg-vermelho-vivo', vazio: 'Ninguém daqui declarou apoio em público, com fonte.' },
+  convencer: { titulo: 'A convencer', curto: 'A convencer', cor: 'text-white/85', barra: 'bg-aco', ponto: 'bg-aco/60', vazio: '' },
+  nao: { titulo: 'Dizem NÃO', curto: 'Dizem NÃO', cor: 'text-azul-claro', barra: 'bg-azul-vivo', ponto: 'bg-azul-vivo', vazio: 'Ninguém daqui disse NÃO em público ainda.' },
+} as const
 
-function Coluna({ tipo, n, registros, uf }: { tipo: 'motta' | 'convencer' | 'nao'; n: number; registros: Registro[]; uf: UF }) {
-  const [todos, setTodos] = useState(false)
-  const cfg = {
-    motta: { titulo: 'Querem o Motta', cor: 'text-[#FF6B6B]', barra: 'bg-vermelho-vivo', ponto: 'bg-vermelho-vivo', vazio: 'Ninguém declarou apoio em público, com fonte.' },
-    convencer: { titulo: 'A convencer', cor: 'text-white/80', barra: 'bg-aco', ponto: 'bg-aco/60', vazio: '' },
-    nao: { titulo: 'Dizem NÃO', cor: 'text-azul-claro', barra: 'bg-azul-vivo', ponto: 'bg-azul-vivo', vazio: 'Ninguém daqui disse NÃO em público ainda.' },
-  }[tipo]
-  const lista = todos ? registros : registros.slice(0, VISIVEIS)
+/** Placar de uma coluna: título, número e as cadeiras. */
+function Placar({ tipo, n }: { tipo: Tipo; n: number }) {
+  const cfg = TIPOS[tipo]
   return (
-    <div className="flex min-h-0 min-w-0 flex-col rounded-2xl bg-white/[0.04] p-3 sm:p-3.5">
-      <span className={`mb-2.5 block h-1 w-full shrink-0 rounded-full ${cfg.barra}`} />
-      <p className="font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.14em] text-white/70 sm:text-[10.5px]">{cfg.titulo}</p>
-      <p className={`num mt-1 text-[2.6rem] leading-none sm:text-[3.4rem] ${cfg.cor}`}>
+    <div className="flex min-w-0 flex-col rounded-2xl bg-white/[0.04] px-3 pb-3 pt-2.5 sm:px-4 sm:pb-4 sm:pt-3">
+      <span className={`mb-2 block h-1 w-full shrink-0 rounded-full ${cfg.barra}`} />
+      <p className="min-h-[2.5em] font-sans text-[10px] font-extrabold uppercase leading-tight tracking-[0.12em] text-white/70 sm:min-h-0 sm:text-[10.5px]">
+        <span className="sm:hidden">{cfg.curto}</span>
+        <span className="hidden sm:inline">{cfg.titulo}</span>
+      </p>
+      <p className={`num mt-1 text-[2.4rem] leading-none sm:text-[3.2rem] ${cfg.cor}`}>
         <NumeroAnimado valor={n} duracao={1.1} />
       </p>
-      <div className="mt-2.5 flex flex-wrap gap-[2.5px]" aria-hidden>
-        {Array.from({ length: Math.min(n, 70) }, (_, i) => (
-          <m.span
-            key={i}
-            className={`h-[7px] w-[7px] rounded-t-full rounded-b-[1.5px] ${cfg.ponto}`}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 + i * 0.01 }}
-          />
+      <div className="mt-2 flex flex-wrap gap-[2.5px]" aria-hidden>
+        {Array.from({ length: Math.min(n, 60) }, (_, i) => (
+          <span key={i} className={`h-[6px] w-[6px] rounded-t-full rounded-b-[1.5px] ${cfg.ponto}`} />
         ))}
       </div>
-      {tipo === 'convencer' ? (
-        <p className="mt-3 text-[12px] leading-snug text-white/60">
-          Sem posição pública. <b className="text-white">São esses que precisam ouvir você.</b>
-        </p>
-      ) : registros.length ? (
-        <ul className={`mt-3 min-h-0 space-y-1.5 ${todos ? 'overflow-y-auto pr-1' : ''} ${cfg.cor}`} data-lenis-prevent>
-          {lista.map((r, i) => (
+    </div>
+  )
+}
+
+/** Lista de nomes com fonte (inteira, com rolagem própria quando é grande). */
+function Lista({ tipo, registros }: { tipo: Exclude<Tipo, 'convencer'>; registros: Registro[] }) {
+  const cfg = TIPOS[tipo]
+  return (
+    <div className="min-w-0">
+      <p className={`mb-2 flex items-center gap-2 font-sans text-[10.5px] font-extrabold uppercase tracking-[0.14em] ${cfg.cor}`}>
+        <i className={`h-2 w-2 rounded-full ${cfg.barra}`} /> {cfg.titulo} · {registros.length}
+      </p>
+      {registros.length ? (
+        <ul className={`space-y-1.5 ${cfg.cor}`}>
+          {registros.map((r, i) => (
             <Deputado key={r.nome + i} r={r} i={i} />
           ))}
-          {registros.length > VISIVEIS && (
-            <li>
-              <button type="button" onClick={() => setTodos((v) => !v)} className="h-8 w-full rounded-lg border border-white/10 text-[11.5px] font-bold text-white/70 transition hover:bg-white/10 hover:text-white">
-                {todos ? 'Mostrar menos' : `+${registros.length - VISIVEIS} deputados`}
-              </button>
-            </li>
-          )}
         </ul>
       ) : (
-        <p className="mt-3 text-[12px] leading-snug text-white/50">{cfg.vazio}</p>
+        <p className="rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-[12.5px] leading-snug text-white/50">{cfg.vazio}</p>
       )}
-      <span className="sr-only">{NOMES_UF[uf]}</span>
     </div>
   )
 }
@@ -158,50 +144,66 @@ function PainelTriplo({ uf, fechar }: { uf: UF; fechar: () => void }) {
   const motta = r.registros.filter((x) => x.posicao === 'motta')
   return (
     <m.div
-      className="absolute inset-x-0 bottom-0 z-20 flex max-h-[80%] flex-col rounded-t-[28px] border-t border-white/10 bg-azul-fundo/[0.97] p-4 shadow-flutua sm:p-6 lg:inset-y-4 lg:left-auto lg:right-4 lg:max-h-none lg:w-[min(640px,54%)] lg:rounded-[28px] lg:border"
-      initial={{ y: '105%', opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: '105%', opacity: 0, transition: { duration: 0.5, ease: EASE } }}
-      transition={{ duration: 0.85, ease: EASE }}
+      className="absolute inset-x-0 bottom-0 z-20 flex max-h-[74%] flex-col rounded-t-[28px] border-t border-white/10 bg-azul-fundo shadow-flutua lg:inset-y-4 lg:left-auto lg:right-4 lg:max-h-none lg:w-[min(600px,52%)] lg:rounded-[28px] lg:border"
+      initial={{ y: '105%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '105%', transition: { duration: 0.45, ease: EASE } }}
+      transition={{ duration: 0.75, ease: EASE }}
       role="dialog"
       aria-label={`Deputados de ${NOMES_UF[uf]}`}
-      data-lenis-prevent
     >
-      <div className="mb-4 flex shrink-0 items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <img src={`${BASE}bandeiras/${uf}.webp`} alt="" className="h-7 w-10 rounded-[4px] object-cover shadow-[0_0_0_1px_rgba(255,255,255,0.2)]" />
-          <div>
-            <h3 className="font-titulo text-[2rem] font-black uppercase leading-none text-white [font-stretch:72%] sm:text-[2.4rem]">{NOMES_UF[uf]}</h3>
-            <p className="mt-1 font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-azul-claro">{r.cadeiras} cadeiras na Câmara</p>
-          </div>
+      {/* cabeçalho */}
+      <div className="flex shrink-0 items-center gap-3 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
+        <img src={`${BASE}bandeiras/${uf}.webp`} alt="" className="h-7 w-10 shrink-0 rounded-[4px] object-cover shadow-[0_0_0_1px_rgba(255,255,255,0.2)]" />
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-titulo text-[1.9rem] font-black uppercase leading-none text-white [font-stretch:72%] sm:text-[2.3rem]">{NOMES_UF[uf]}</h3>
+          <p className="mt-1 font-sans text-[10.5px] font-bold uppercase tracking-[0.16em] text-azul-claro">{r.cadeiras} cadeiras na Câmara</p>
         </div>
         <button type="button" onClick={fechar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white/10" aria-label="Voltar ao mapa">
           <X size={20} />
         </button>
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-3 gap-2 sm:gap-3">
-        <Coluna tipo="motta" n={r.motta} registros={motta} uf={uf} />
-        <Coluna tipo="convencer" n={r.convencer} registros={[]} uf={uf} />
-        <Coluna tipo="nao" n={r.nao} registros={nao} uf={uf} />
+
+      {/* corpo rolável: placar triplo + nomes */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 sm:px-6" data-lenis-prevent>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <Placar tipo="motta" n={r.motta} />
+          <Placar tipo="convencer" n={r.convencer} />
+          <Placar tipo="nao" n={r.nao} />
+        </div>
+        <p className="mt-3 text-[13px] leading-snug text-white/60">
+          <b className="text-white">{r.convencer} sem posição pública.</b> São esses que precisam ouvir você.
+        </p>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 sm:gap-4">
+          <Lista tipo="nao" registros={nao} />
+          <Lista tipo="motta" registros={motta} />
+        </div>
       </div>
-      <div className="mt-4 flex shrink-0 items-center gap-2.5">
+
+      {/* ações */}
+      <div className="flex shrink-0 items-center gap-2.5 border-t border-white/10 px-5 py-4 sm:px-6">
         <button
           type="button"
-          className="btn-azul h-12 min-w-0 flex-1 px-5 text-[15px]"
+          className="btn-azul h-12 min-w-0 flex-1 px-4 text-[15px]"
           onClick={() => {
             definirUF(uf)
             rolarPara('recado')
           }}
-          data-rastreio={`cta:cobrar_${uf}`}
+          data-rastreio={`cta:recado_${uf}`}
         >
-          <span className="truncate">Cobrar deputados de {uf}</span>
+          <Send size={17} className="shrink-0" /> Mandar meu recado
         </button>
-        <a className="btn-linha h-12 shrink-0 px-4 text-[15px] text-white" href={linkWhatsapp('fonte', uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:fonte" title="Mandar a fonte de um posicionamento">
-          <MessageCircle size={17} /> Fonte
+        <a
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white/10"
+          href={linkWhatsapp('fonte', uf)}
+          target="_blank"
+          rel="noopener"
+          data-rastreio="whatsapp_click:fonte"
+          aria-label="Enviar a fonte de um posicionamento pelo WhatsApp"
+          title="Enviar a fonte de um posicionamento"
+        >
+          <MessageCircle size={19} />
         </a>
-        <button type="button" onClick={fechar} className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-white/15 text-white/75 transition hover:bg-white/10 hover:text-white" aria-label="Voltar ao mapa" title="Voltar ao mapa">
-          <ArrowLeft size={18} />
-        </button>
       </div>
     </m.div>
   )
@@ -220,13 +222,30 @@ export function Votometro() {
   const [aberto, setAberto] = useState<UF | null>(null)
   const [semWebgl, setSemWebgl] = useState(false)
   const [carregado, setCarregado] = useState(false)
-  const perto = useInView(palco, { margin: '600px 0px', once: true })
+  const perto = useInView(palco, { margin: '1400px 0px', once: true })
+
+  // baixa o three.js e o mapa no tempo ocioso, bem antes da seção (o clique não espera)
+  useEffect(() => {
+    const ocioso = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback
+    const pre = () => {
+      void import('../three/mapa')
+      void fetch(`${BASE}brmap.json`)
+    }
+    if (ocioso) ocioso(pre, { timeout: 4000 })
+    else setTimeout(pre, 2000)
+  }, [])
 
   useEffect(() => {
     if (!perto || !tela.current) return
     let vivo = true
     let io: IntersectionObserver | null = null
     Promise.all([import('../three/mapa'), fetch(`${BASE}brmap.json`).then((r) => r.json() as Promise<DadosMapa>), carregarConteudo()])
+      .then(([m, dados]) => new Promise<[typeof m, DadosMapa]>((ok) => {
+        // monta a cena num momento ocioso, fora do quadro de rolagem
+        const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback
+        if (ric) ric(() => ok([m, dados]), { timeout: 800 })
+        else setTimeout(() => ok([m, dados]), 60)
+      }))
       .then(([{ CenaMapa }, dados]) => {
         if (!vivo || !tela.current) return
         const c = new CenaMapa(
@@ -336,8 +355,9 @@ export function Votometro() {
         {/* palco 3D */}
         <div
           id="palco-mapa"
+          data-sem-barra
           ref={palco}
-          className="relative mt-8 h-[82svh] max-h-[820px] min-h-[540px] overflow-hidden rounded-[28px] bg-[radial-gradient(90%_70%_at_50%_35%,#11286b_0%,#081a52_45%,#040B26_100%)] sm:mt-10 sm:rounded-[36px]"
+          className="relative mt-8 h-[76svh] max-h-[640px] min-h-[520px] overflow-hidden sm:h-[82svh] sm:max-h-[820px] sm:min-h-[540px] rounded-[28px] bg-[radial-gradient(90%_70%_at_50%_35%,#11286b_0%,#081a52_45%,#040B26_100%)] sm:mt-10 sm:rounded-[36px]"
         >
           <canvas ref={tela} className="absolute inset-0 h-full w-full" aria-label="Mapa 3D do Brasil por estado" />
           <div ref={camada} className="pointer-events-none absolute inset-0" aria-hidden />

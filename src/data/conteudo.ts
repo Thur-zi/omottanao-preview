@@ -16,7 +16,7 @@ export const CANDIDATO = {
   nome: 'Luiz Philippe de Orleans e Bragança',
   curto: 'Luiz Philippe',
   partido: 'PL-SP',
-  foto: null as string | null, // ex.: 'luiz-philippe.webp' em /public
+  foto: 'luiz-960.webp',
 }
 
 export const MOTTA = { nome: 'Hugo Motta', partido: 'Republicanos-PB' }
@@ -64,11 +64,12 @@ export const MOTIVOS: Motivo[] = [
   },
 ]
 
+/** "Título · detalhe" (o detalhe é opcional). Editável no painel. */
 export const PAUTAS: { titulo: string; exemplo?: boolean }[] = [
-  { titulo: 'Pauta 1 do Luiz Philippe', exemplo: true },
-  { titulo: 'Pauta 2 do Luiz Philippe', exemplo: true },
-  { titulo: 'Pauta 3 do Luiz Philippe', exemplo: true },
-  { titulo: 'Pauta 4 do Luiz Philippe', exemplo: true },
+  { titulo: 'Voto de desconfiança · Projeto dele: o plenário pode afastar quem comanda a Mesa e descumpre o combinado.' },
+  { titulo: 'Congresso que decide · A Câmara não pode ser carimbadora do que meia dúzia de líderes já fechou.' },
+  { titulo: 'Freio no ativismo judicial · Regras para decisões que suspendem leis aprovadas pelo Congresso.' },
+  { titulo: 'Emenda sem chantagem · Proposta proíbe o governo de interferir nas emendas dos deputados.' },
 ]
 
 export const LETREIRO = ['O Motta não', 'Voto secreto', '257 votos', '1º de fevereiro', 'Cobre seu deputado', 'Direita com candidato próprio']

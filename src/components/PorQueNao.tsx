@@ -20,7 +20,7 @@ function Recorte({ mtv, i }: { mtv: Motivo; i: number }) {
     >
       {/* fita adesiva */}
       <span aria-hidden className="absolute left-1/2 top-1 z-10 h-7 w-28 -translate-x-1/2 rotate-[-3deg] bg-[#e9e2c9]/80 shadow-sm" />
-      <div className="relative flex min-h-[430px] flex-col overflow-hidden bg-[#F4F1E8] p-7 text-[#15110d] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.8)]">
+      <div className="relative flex min-h-[430px] flex-col overflow-hidden bg-[#F4F1E8] p-7 text-[#15110d] shadow-[0_24px_40px_-24px_rgba(0,0,0,0.9)]">
         {/* textura de papel de jornal */}
         <span aria-hidden className="pointer-events-none absolute inset-0 opacity-50 [background-image:repeating-linear-gradient(0deg,rgba(0,0,0,0.025)_0_1px,transparent_1px_3px)]" />
         <div className="relative flex items-center justify-between gap-3 border-b-2 border-[#15110d] pb-2.5 font-sans text-[10.5px] font-extrabold uppercase tracking-[0.18em]">
@@ -45,7 +45,7 @@ function Recorte({ mtv, i }: { mtv: Motivo; i: number }) {
         {/* carimbo vermelho */}
         <span
           aria-hidden
-          className="absolute -right-3 bottom-16 rotate-[-14deg] rounded-md border-[3px] border-vermelho px-2.5 pb-0.5 pt-1 font-titulo text-[22px] font-black uppercase leading-none text-vermelho opacity-80 mix-blend-multiply [font-stretch:70%]"
+          className="absolute -right-3 bottom-16 rotate-[-14deg] rounded-md border-[3px] border-vermelho/85 px-2.5 pb-0.5 pt-1 font-titulo text-[22px] font-black uppercase leading-none text-vermelho/85 [font-stretch:70%]"
         >
           Lembre disso
         </span>
@@ -56,62 +56,100 @@ function Recorte({ mtv, i }: { mtv: Motivo; i: number }) {
 
 export function PorQueNao() {
   useConteudo()
+  const janela = useRef<HTMLDivElement>(null)
   const trilho = useRef<HTMLDivElement>(null)
-  const estado = useRef({ pausado: false, visivel: false, arrastando: false, moveu: false, x: 0, scroll: 0, retomar: 0 })
+  /*
+   * O trilho anda por transform (GPU), não por scrollLeft: scrollLeft arredonda para pixel
+   * inteiro e, a ~0,7 px por quadro, ficava parado e dava saltos (o "quadro a quadro").
+   */
+  const s = useRef({ x: 0, alvo: null as number | null, metade: 1, visivel: false, pausado: false, arrastando: false, moveu: false, px: 0, py: 0, x0: 0, eixo: '' as '' | 'x' | 'y', retomar: 0, ultimo: 0, raf: 0 })
 
-  /* rolagem automática contínua, em loop (o conteúdo é duplicado) */
+  const aplicarRef = useRef<() => void>(() => undefined)
+
   useEffect(() => {
     const el = trilho.current
-    if (!el) return
+    const jan = janela.current
+    if (!el || !jan) return
+    const st = s.current
     const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const io = new IntersectionObserver(([e]) => (estado.current.visivel = e.isIntersecting), { threshold: 0.1 })
-    io.observe(el)
-    let raf = 0
-    let ultimo = performance.now()
-    const passo = (agora: number) => {
-      const dt = Math.min(50, agora - ultimo)
-      ultimo = agora
-      const s = estado.current
-      if (!reduz && s.visivel && !s.pausado && !s.arrastando && performance.now() > s.retomar) {
-        el.scrollLeft += dt * 0.045
-      }
-      const metade = el.scrollWidth / 2
-      if (el.scrollLeft >= metade) el.scrollLeft -= metade
-      raf = requestAnimationFrame(passo)
+    const medir = () => (st.metade = Math.max(1, el.scrollWidth / 2))
+    medir()
+    const ro = new ResizeObserver(medir)
+    ro.observe(el)
+    const aplicar = () => {
+      if (st.x >= st.metade) st.x -= st.metade
+      if (st.x < 0) st.x += st.metade
+      el.style.transform = `translate3d(${-st.x}px,0,0)`
     }
-    raf = requestAnimationFrame(passo)
+    const passo = (agora: number) => {
+      const dt = Math.min(50, agora - (st.ultimo || agora))
+      st.ultimo = agora
+      if (st.alvo !== null) {
+        const d = st.alvo - st.x
+        st.x += d * Math.min(1, dt * 0.012)
+        if (Math.abs(d) < 0.5) {
+          st.x = st.alvo
+          st.alvo = null
+        }
+        aplicar()
+      } else if (!reduz && !st.pausado && !st.arrastando && agora > st.retomar) {
+        st.x += dt * 0.05
+        aplicar()
+      }
+      st.raf = st.visivel ? requestAnimationFrame(passo) : 0
+    }
+    // só anima enquanto a seção está na tela (fora dela: zero custo)
+    const io = new IntersectionObserver(([e]) => {
+      st.visivel = e.isIntersecting
+      if (st.visivel && !st.raf) {
+        st.ultimo = 0
+        st.raf = requestAnimationFrame(passo)
+      }
+    })
+    io.observe(jan)
+    aplicarRef.current = aplicar
     return () => {
-      cancelAnimationFrame(raf)
+      cancelAnimationFrame(st.raf)
+      st.raf = 0
       io.disconnect()
+      ro.disconnect()
     }
   }, [])
 
   const largura = () => (trilho.current?.querySelector<HTMLElement>('[data-cartao]')?.offsetWidth ?? 380) + 28
   const pular = (dir: 1 | -1) => {
-    const el = trilho.current
-    if (!el) return
-    estado.current.retomar = performance.now() + 4000
-    if (dir < 0 && el.scrollLeft < largura()) el.scrollLeft += el.scrollWidth / 2
-    el.scrollBy({ left: dir * largura(), behavior: 'smooth' })
+    const st = s.current
+    st.retomar = performance.now() + 4000
+    const base = st.alvo ?? st.x
+    if (dir < 0 && base < largura()) {
+      st.x += st.metade
+      st.alvo = base + st.metade - largura()
+    } else st.alvo = base + dir * largura()
   }
 
+  // arrastar com mouse e com o dedo; no toque, gesto vertical continua rolando a página
   const baixo = (e: React.PointerEvent) => {
-    if (e.pointerType !== 'mouse' || !trilho.current) return
-    Object.assign(estado.current, { arrastando: true, moveu: false, x: e.clientX, scroll: trilho.current.scrollLeft })
-    trilho.current.style.cursor = 'grabbing'
+    Object.assign(s.current, { arrastando: true, moveu: false, px: e.clientX, py: e.clientY, x0: s.current.x, eixo: '', alvo: null })
+    if (e.pointerType === 'mouse' && janela.current) janela.current.style.cursor = 'grabbing'
   }
   const mover = (e: React.PointerEvent) => {
-    const s = estado.current
-    if (!s.arrastando || !trilho.current) return
-    const dx = e.clientX - s.x
-    if (Math.abs(dx) > 4) s.moveu = true
-    trilho.current.scrollLeft = s.scroll - dx
+    const st = s.current
+    if (!st.arrastando) return
+    const dx = e.clientX - st.px
+    const dy = e.clientY - st.py
+    if (!st.eixo && Math.abs(dx) + Math.abs(dy) > 6) st.eixo = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+    if (st.eixo === 'y') return soltar()
+    if (st.eixo !== 'x') return
+    st.moveu = true
+    st.x = st.x0 - dx
+    aplicarRef.current()
   }
   const soltar = () => {
-    if (!estado.current.arrastando || !trilho.current) return
-    estado.current.arrastando = false
-    estado.current.retomar = performance.now() + 2500
-    trilho.current.style.cursor = ''
+    const st = s.current
+    if (!st.arrastando) return
+    st.arrastando = false
+    st.retomar = performance.now() + 2500
+    if (janela.current) janela.current.style.cursor = ''
   }
 
   const lista = [...MOTIVOS, ...MOTIVOS]
@@ -146,35 +184,41 @@ export function PorQueNao() {
       </div>
 
       <div
-        ref={trilho}
-        onPointerEnter={(e) => e.pointerType === 'mouse' && (estado.current.pausado = true)}
+        ref={janela}
+        onPointerEnter={(e) => e.pointerType === 'mouse' && (s.current.pausado = true)}
         onPointerLeave={() => {
-          estado.current.pausado = false
+          s.current.pausado = false
           soltar()
         }}
         onPointerDown={baixo}
         onPointerMove={mover}
         onPointerUp={soltar}
-        onTouchStart={() => (estado.current.retomar = performance.now() + 3500)}
-        onFocusCapture={() => (estado.current.pausado = true)}
-        onBlurCapture={() => (estado.current.pausado = false)}
+        onPointerCancel={soltar}
+        onFocusCapture={() => (s.current.pausado = true)}
+        onBlurCapture={() => (s.current.pausado = false)}
         onClickCapture={(e) => {
-          if (estado.current.moveu) {
+          if (s.current.moveu) {
             e.preventDefault()
             e.stopPropagation()
-            estado.current.moveu = false
+            s.current.moveu = false
           }
         }}
-        className="sem-barra relative mt-14 flex cursor-grab select-none gap-7 overflow-x-auto px-6 pb-10 pt-4"
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight') pular(1)
+          if (e.key === 'ArrowLeft') pular(-1)
+        }}
+        className="relative mt-14 cursor-grab touch-pan-y select-none overflow-hidden pb-10 pt-4"
         role="region"
-        aria-label="Decisões do Motta (passam sozinhas; passe o mouse para pausar)"
+        aria-label="Decisões do Motta (passam sozinhas; passe o mouse para pausar ou use as setas)"
         tabIndex={0}
       >
-        {lista.map((mtv, i) => (
-          <div key={i} aria-hidden={i >= MOTIVOS.length}>
-            <Recorte mtv={mtv} i={i % MOTIVOS.length} />
-          </div>
-        ))}
+        <div ref={trilho} className="flex w-max gap-7 px-6 will-change-transform">
+          {lista.map((mtv, i) => (
+            <div key={i} aria-hidden={i >= MOTIVOS.length}>
+              <Recorte mtv={mtv} i={i % MOTIVOS.length} />
+            </div>
+          ))}
+        </div>
       </div>
       <p className="container relative text-[13px] font-semibold text-white/40">Passa sozinho. Pare com o mouse ou arraste para o lado.</p>
     </section>

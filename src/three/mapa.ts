@@ -107,6 +107,7 @@ export class CenaMapa {
   private grosso = window.matchMedia('(pointer: coarse)').matches
   private quadro = 0
   private sway = { x: 0, y: 0 }
+  private contorno: THREE.Vector3[] = []
 
   aoPassar?: (uf: string | null, x: number, y: number) => void
   aoClicar?: (uf: string) => void
@@ -151,10 +152,8 @@ export class CenaMapa {
       const altura = 0.16 + i.intensidade * 1.6
       const geo = new THREE.ExtrudeGeometry(formas(m.d, dados.w, dados.h), {
         depth: altura,
-        bevelEnabled: true,
-        bevelThickness: 0.015,
-        bevelSize: 0.012,
-        bevelSegments: 1,
+        bevelEnabled: false,
+        curveSegments: 1,
       })
       let cor = i.nao > 0 ? SEM.clone().lerp(AZUL, Math.min(1, 0.45 + i.intensidade * 2.2)) : SEM.clone()
       if (i.intensidade > 0.3) cor = AZUL.clone().lerp(AZUL_VIVO, Math.min(1, (i.intensidade - 0.3) * 2.5))
@@ -168,6 +167,8 @@ export class CenaMapa {
       // contorno no topo
       for (const f of formas(m.d, dados.w, dados.h)) {
         const pts = f.getPoints().map((p) => new THREE.Vector3(p.x, p.y, altura + 0.02))
+        // amostra do contorno para enquadrar o mapa na tela
+        for (let k = 0; k < pts.length; k += 3) this.contorno.push(pts[k].clone().setZ(0), pts[k].clone())
         const linha = new THREE.LineLoop(
           new THREE.BufferGeometry().setFromPoints(pts),
           new THREE.LineBasicMaterial({ color: '#c9d8ff', transparent: true, opacity: 0.35 }),
@@ -209,6 +210,7 @@ export class CenaMapa {
         const el = document.createElement('span')
         const i = info(uf)
         el.className = 'rotulo-uf'
+        el.style.opacity = '0' // aparece no primeiro desenho, já no lugar
         el.innerHTML = i.nao > 0 ? `${uf}<b>${i.nao}</b>` : uf
         if (uf === destaque) el.dataset.destaque = 'true'
         camadaRotulos.appendChild(el)
@@ -227,22 +229,67 @@ export class CenaMapa {
     this.redimensionar()
     this.camera.position.copy(this.posBase)
     this.camera.lookAt(this.olhar)
-    this.iniciar()
+    // compila os shaders sem travar a página (KHR_parallel_shader_compile) e só então desenha
+    this.renderer
+      .compileAsync(this.scene, this.camera)
+      .catch(() => undefined)
+      .finally(() => this.iniciar())
   }
 
-  /** Enquadra o mapa inteiro conforme a proporção do canvas. */
+  /** Enquadra o mapa inteiro conforme a proporção do canvas: nada cortado, centralizado. */
   private redimensionar() {
     const el = this.canvas.parentElement ?? this.canvas
     this.w = el.clientWidth || 1
     this.h = el.clientHeight || 1
     this.renderer.setSize(this.w, this.h, false)
     this.camera.aspect = this.w / this.h
+    this.camera.clearViewOffset()
     this.camera.updateProjectionMatrix()
-    const fator = Math.min(2.1, Math.max(1, 0.95 / Math.min(1, this.camera.aspect) ** 0.9))
-    this.posBase.set(0, -10.5 * fator, 12.5 * fator)
+    const pos0 = this.camera.position.clone()
+    const q0 = this.camera.quaternion.clone()
+    const v = new THREE.Vector3()
+    const medir = (f: number) => {
+      this.camera.position.set(0, -10.5 * f, 12.5 * f)
+      this.camera.lookAt(this.olhar)
+      this.camera.updateMatrixWorld()
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity
+      for (const p of this.contorno) {
+        v.copy(p).project(this.camera)
+        if (v.x < x0) x0 = v.x
+        if (v.x > x1) x1 = v.x
+        if (v.y < y0) y0 = v.y
+        if (v.y > y1) y1 = v.y
+      }
+      return { x0, x1, y0, y1 }
+    }
+    // folga: rótulos laterais e o "Escolha um estado" no topo
+    const mx = this.camera.aspect < 0.8 ? 0.93 : 0.86
+    const my = 0.8
+    let lo = 0.3
+    let hi = 6
+    for (let i = 0; i < 22; i++) {
+      const f = (lo + hi) / 2
+      const b = medir(f)
+      if ((b.x1 - b.x0) / 2 <= mx && (b.y1 - b.y0) / 2 <= my) hi = f
+      else lo = f
+    }
+    const b = medir(hi)
+    this.posBase.set(0, -10.5 * hi, 12.5 * hi)
+    // a névoa acompanha a distância da câmera (senão o mapa escurece quando ela se afasta)
+    const fog = this.scene.fog as THREE.Fog
+    fog.near = 16 * hi
+    fog.far = 42 * hi
+    this.camera.far = Math.max(120, 60 * hi)
+    const cx = (b.x0 + b.x1) / 2
+    const cy = (b.y0 + b.y1) / 2 + 0.04 // um pouco abaixo do centro
+    this.camera.setViewOffset(this.w, this.h, (cx * this.w) / 2, (-cy * this.h) / 2, this.w, this.h)
+    this.camera.updateProjectionMatrix()
     if (!this.selecionado && !this.voando) {
       this.camera.position.copy(this.posBase)
       this.camera.lookAt(this.olhar)
+    } else {
+      this.camera.position.copy(pos0)
+      this.camera.quaternion.copy(q0)
     }
     this.sujo = true
   }
@@ -250,8 +297,10 @@ export class CenaMapa {
   private mover = (e: PointerEvent) => {
     const r = this.canvas.getBoundingClientRect()
     this.ponteiro.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
-    this.sway.x = this.ponteiro.x
-    this.sway.y = this.ponteiro.y
+    if (e.pointerType === 'mouse') {
+      this.sway.x = this.ponteiro.x
+      this.sway.y = this.ponteiro.y
+    }
     this.ponteiroSujo = e.pointerType !== 'touch'
     this.sujo = true
   }
@@ -350,9 +399,11 @@ export class CenaMapa {
     const tam = Math.min(2.6, Math.max(0.75, e.tamanho / 2.2))
     // o painel ocupa a direita (desktop) ou a metade de baixo (celular): o estado fica no espaço livre
     const largo = this.w / this.h > 1.1
-    const desvio = largo ? new THREE.Vector3(1.55 * tam, 0, 0) : new THREE.Vector3(0, -1.35 * tam, 0)
+    // celular: o painel cobre ~3/4 de baixo, então o estado sobe para a faixa de cima
+    const desvio = largo ? new THREE.Vector3(1.55 * tam, 0, 0) : new THREE.Vector3(0, -2.6 * tam, 0)
+    const longe = largo ? 1 : 1.3
     const P0 = this.camera.position.clone()
-    const P2 = e.centro.clone().add(desvio).add(new THREE.Vector3(0, -2.7 * tam, 3.6 * tam))
+    const P2 = e.centro.clone().add(desvio).add(new THREE.Vector3(0, -2.7 * tam * longe, 3.6 * tam * longe))
     const P1 = P0.clone().lerp(P2, 0.5).add(new THREE.Vector3(0, 0, 3.5))
     const L0 = this.olhar.clone()
     const L1 = e.centro.clone().add(desvio)

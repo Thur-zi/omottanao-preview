@@ -21,8 +21,8 @@ export function Alternativa() {
       <m.div aria-hidden style={{ y: yPalavra }} className="display pointer-events-none absolute -right-[4vw] top-0 select-none text-[34vw] leading-none text-white/[0.04]">
         22
       </m.div>
-      <div className="container relative grid items-center gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
-        <m.figure style={{ y: yFoto }} className="relative mx-auto w-full max-w-[460px]">
+      <div className="container relative grid grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
+        <m.figure style={{ y: yFoto }} className="relative mx-auto w-[min(100%,420px)] lg:w-full lg:max-w-[460px]">
           <m.div
             className="relative aspect-[4/5] overflow-hidden rounded-[32px] bg-azul-noite shadow-flutua"
             initial={{ clipPath: 'inset(100% 0 0 0 round 32px)' }}
@@ -31,7 +31,23 @@ export function Alternativa() {
             transition={{ duration: 1.4, ease: EASE }}
           >
             {CONFIG.candidatoFoto ? (
-              <img src={CONFIG.candidatoFoto} alt={CANDIDATO.nome} className="h-full w-full object-cover" loading="lazy" />
+              <img src={CONFIG.candidatoFoto} alt={CANDIDATO.nome} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+            ) : CANDIDATO.foto ? (
+              <>
+                <img
+                  src={`${BASE}luiz-960.webp`}
+                  srcSet={`${BASE}luiz-600.webp 600w, ${BASE}luiz-960.webp 960w`}
+                  sizes="(min-width: 1024px) 460px, 90vw"
+                  width={960}
+                  height={1200}
+                  alt={`${CANDIDATO.nome} discursa no plenário da Câmara`}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(4,11,38,0.75)_100%)]" />
+                <span className="absolute left-4 top-3 rounded bg-black/30 px-1.5 py-0.5 text-[9.5px] font-semibold text-white/70">Foto: Câmara dos Deputados · CC BY 3.0</span>
+              </>
             ) : (
               <div className="grid h-full w-full place-items-center bg-[radial-gradient(80%_60%_at_50%_30%,#1F4FE0_0%,#081A52_70%)]">
                 <svg viewBox="0 0 200 250" className="h-[78%] w-[78%] text-white/15" aria-hidden>
@@ -44,12 +60,23 @@ export function Alternativa() {
               </div>
             )}
           </m.div>
-          <figcaption className="absolute -bottom-5 -right-3 rotate-[-4deg] rounded-xl bg-white px-4 py-2.5 font-titulo text-lg font-black uppercase text-azul-tinta shadow-flutua [font-stretch:80%] sm:-right-6">
-            {CANDIDATO.partido}
+          <figcaption
+            className="absolute -bottom-6 right-3 flex rotate-[-4deg] items-center gap-3 rounded-2xl bg-white py-2 pl-2.5 pr-4 font-titulo text-xl font-black uppercase leading-none text-azul-tinta shadow-flutua [font-stretch:80%] sm:-right-6"
+            aria-label={`Partido e estado: ${CANDIDATO.partido}`}
+          >
+            <span className="flex items-center gap-2">
+              <img src={`${BASE}partidos/PL.webp`} alt="" width={36} height={36} className="h-9 w-9 object-contain" loading="lazy" />
+              PL
+            </span>
+            <i aria-hidden className="h-7 w-px bg-azul-tinta/15" />
+            <span className="flex items-center gap-2">
+              <img src={`${BASE}bandeiras/SP.webp`} alt="" width={36} height={24} className="h-6 w-9 rounded-[3px] object-cover shadow-[0_0_0_1px_rgba(10,20,51,0.15)]" loading="lazy" />
+              SP
+            </span>
           </figcaption>
         </m.figure>
 
-        <div>
+        <div className="min-w-0">
           <Surge>
             <span className="rotulo text-azul-claro">A alternativa</span>
           </Surge>
@@ -62,17 +89,21 @@ export function Alternativa() {
             </p>
           </Surge>
           <ul className="mt-10 grid gap-3 sm:grid-cols-2">
-            {PAUTAS.map((p, i) => (
-              <Surge as="li" key={p.titulo} atraso={0.2 + i * 0.07} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                <span className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-azul-vivo transition-transform duration-500 group-hover:scale-x-100" />
-                <span className="font-sans text-[11px] font-extrabold text-azul-claro">0{i + 1}</span>
-                <p className="mt-2 font-titulo text-2xl font-black uppercase leading-[0.95] [font-stretch:75%]">{p.titulo}</p>
-                {CONFIG.previa && p.exemplo && <span className="selo-exemplo mt-3 border-white/25 text-white/45">A definir</span>}
-              </Surge>
-            ))}
+            {PAUTAS.map((p, i) => {
+              const [titulo, detalhe] = p.titulo.split(' · ')
+              return (
+                <Surge as="li" key={p.titulo} atraso={0.2 + i * 0.07} className="group relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                  <span className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-azul-vivo transition-transform duration-500 group-hover:scale-x-100" />
+                  <span className="font-sans text-[11px] font-extrabold text-azul-claro">0{i + 1}</span>
+                  <p className="mt-2 font-titulo text-2xl font-black uppercase leading-[0.95] [font-stretch:75%]">{titulo}</p>
+                  {detalhe && <p className="mt-2.5 text-[14.5px] leading-snug text-white/65">{detalhe}</p>}
+                  {CONFIG.previa && p.exemplo && <span className="selo-exemplo mt-3 border-white/25 text-white/45">A definir</span>}
+                </Surge>
+              )
+            })}
           </ul>
           <Surge atraso={0.4} className="mt-10">
-            <a className="btn-zap" href={linkWhatsapp('alternativa')} target="_blank" rel="noopener" data-rastreio="whatsapp_click:alternativa">
+            <a data-sem-barra className="btn-zap w-full whitespace-normal px-5 text-center text-[15px] leading-tight sm:w-auto sm:px-8 sm:text-[17px]" href={linkWhatsapp('alternativa')} target="_blank" rel="noopener" data-rastreio="whatsapp_click:alternativa">
               <IconeWhatsapp /> Fale com o Luiz no WhatsApp
             </a>
           </Surge>

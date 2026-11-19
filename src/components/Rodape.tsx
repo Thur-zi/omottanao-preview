@@ -76,18 +76,28 @@ export function Rodape() {
 export function BarraFixa({ ativa }: { ativa: boolean }) {
   const [visivel, setVisivel] = useState(false)
   useEffect(() => {
-    const ocultas = new Set<string>()
-    const ids = ['inicio', 'recado', 'assine']
+    // some onde a tela já tem um botão próprio (para não cobrir nem "bater" nele)
+    const ocultas = new Set<Element>()
     const io = new IntersectionObserver(
       (es) => {
-        es.forEach((e) => (e.isIntersecting ? ocultas.add(e.target.id) : ocultas.delete(e.target.id)))
+        es.forEach((e) => (e.isIntersecting ? ocultas.add(e.target) : ocultas.delete(e.target)))
         setVisivel(ocultas.size === 0)
       },
       { threshold: 0.08 },
     )
-    const t = setTimeout(() => ids.forEach((id) => document.getElementById(id) && io.observe(document.getElementById(id)!)), 1200)
+    const varrer = () => document.querySelectorAll('#inicio, #recado, #assine, [data-sem-barra]').forEach((el) => io.observe(el))
+    const t = setTimeout(varrer, 1200)
+    const t2 = setTimeout(varrer, 5000)
+    let pendente = 0
+    const mo = new MutationObserver(() => {
+      if (!pendente) pendente = window.setTimeout(() => ((pendente = 0), varrer()), 400)
+    })
+    mo.observe(document.getElementById('root') ?? document.body, { childList: true, subtree: true })
     return () => {
       clearTimeout(t)
+      clearTimeout(t2)
+      clearTimeout(pendente)
+      mo.disconnect()
       io.disconnect()
     }
   }, [])

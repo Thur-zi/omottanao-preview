@@ -46,7 +46,7 @@ function aplicar(r: Resposta) {
   if (c.responsavel) CONFIG.responsavel = c.responsavel
   if (c.encarregado_nome) CONFIG.encarregado.nome = c.encarregado_nome
   if (c.encarregado_email) CONFIG.encarregado.email = c.encarregado_email
-  CONFIG.candidatoFoto = c.candidato_foto || null
+  CONFIG.candidatoFoto = c.candidato_foto || null // vazio = foto padrão (CANDIDATO.foto)
   CONFIG.previa = c.previa !== '0'
   versao++
   ouvintes.forEach((f) => f())
