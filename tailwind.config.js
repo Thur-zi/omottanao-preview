@@ -39,6 +39,7 @@ export default {
         letreiro: { from: { transform: 'translateX(0)' }, to: { transform: 'translateX(-50%)' } },
         respira: { '0%,100%': { transform: 'scale(1)', opacity: '0.55' }, '50%': { transform: 'scale(1.35)', opacity: '0' } },
         desce: { '0%': { transform: 'translateY(-30%)', opacity: '0' }, '40%': { opacity: '1' }, '100%': { transform: 'translateY(60%)', opacity: '0' } },
+        quica: { '0%,100%': { transform: 'translateY(-3px)' }, '50%': { transform: 'translateY(4px)' } },
         grao: {
           '0%,100%': { transform: 'translate(0,0)' },
           '20%': { transform: 'translate(-3%,2%)' },
@@ -51,6 +52,7 @@ export default {
         letreiro: 'letreiro 40s linear infinite',
         respira: 'respira 2.4s ease-out infinite',
         desce: 'desce 1.8s cubic-bezier(.6,0,.4,1) infinite',
+        quica: 'quica 1.2s cubic-bezier(.45,0,.55,1) infinite',
         grao: 'grao 0.9s steps(4) infinite',
       },
     },

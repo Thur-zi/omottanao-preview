@@ -6,8 +6,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, animate, m, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { EASE, EASE_CINEMA, rolarPara, travarRolagem, useMagnetico } from '../lib/movimento'
 import { rastrear } from '../lib/rastreio'
-import { Stamp } from 'lucide-react'
-import { Impressao, SetaBaixo } from './Marca'
+import { ChevronDown, Stamp } from 'lucide-react'
+import { Impressao } from './Marca'
 import type { CenaCarimbo } from '../three/carimbo'
 
 type Fase = 'espera' | 'golpe' | 'aberto'
@@ -326,7 +326,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
       </AnimatePresence>
 
       {/* depois do golpe: título, legendas e "explorar" */}
-      <m.div style={{ y: yTitulo, opacity: opTitulo }} className="pointer-events-none absolute inset-x-0 bottom-[16svh] z-20 px-4 text-center md:bottom-[15svh]">
+      <m.div style={{ y: yTitulo, opacity: opTitulo }} className="pointer-events-none absolute inset-x-0 bottom-[max(16svh,118px)] z-20 px-4 text-center md:bottom-[max(17svh,150px)]">
         <h1 className="display whitespace-nowrap text-[15.5vw] leading-[0.8] drop-shadow-[0_10px_40px_rgba(28,3,3,0.55)] md:text-[min(10vw,10.5rem)]">
           {['O', 'MOTTA', 'NÃO.'].map((p, i) => (
             <span key={p} className="-mt-[0.24em] inline-block overflow-hidden pb-[0.06em] pt-[0.24em] align-bottom">
@@ -367,16 +367,19 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
           <m.button
             type="button"
             onClick={() => rolarPara('assine', 0)}
-            className="absolute inset-x-0 bottom-3 z-30 mx-auto flex w-max flex-col items-center gap-2 px-6 py-2 font-sans text-[11px] font-extrabold uppercase text-white"
+            aria-label="Explorar: descer para o abaixo-assinado"
+            className="group absolute inset-x-0 bottom-[60px] z-30 mx-auto flex w-max items-center gap-3 rounded-full py-1.5 pl-1.5 pr-5 font-sans text-[12px] font-extrabold uppercase text-white transition-colors hover:bg-white/10 sm:bottom-[80px]"
             initial={aberto ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: EASE, delay: aberto ? 0 : 1.1 }}
             data-rastreio="explorar:abertura"
           >
-            <span className="tracking-rotulo [margin-right:-0.24em]">Explorar</span>
-            <span className="relative block h-10 w-6 overflow-hidden">
-              <SetaBaixo className="absolute inset-0 h-10 w-6 animate-desce" />
+            {/* círculo com a seta quicando: deixa claro que dá para descer */}
+            <span className="relative grid h-11 w-11 place-items-center rounded-full bg-white text-vermelho shadow-[0_10px_30px_-8px_rgba(28,3,3,0.7)]">
+              <span aria-hidden className="absolute inset-0 animate-respira rounded-full border-2 border-white" />
+              <ChevronDown size={24} strokeWidth={3} className="animate-quica" />
             </span>
+            <span className="tracking-[0.22em] drop-shadow-[0_2px_10px_rgba(28,3,3,0.6)]">Explorar</span>
           </m.button>
         )}
       </AnimatePresence>
