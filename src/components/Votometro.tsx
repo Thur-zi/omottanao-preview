@@ -220,6 +220,8 @@ export function Votometro() {
   const dica = useRef<HTMLDivElement>(null)
   const cena = useRef<CenaMapa | null>(null)
   const [aberto, setAberto] = useState<UF | null>(null)
+  // no celular o palco cresce antes do voo, para caber o estado e o painel
+  const [expandido, setExpandido] = useState(false)
   const [semWebgl, setSemWebgl] = useState(false)
   const [carregado, setCarregado] = useState(false)
   const perto = useInView(palco, { margin: '1400px 0px', once: true })
@@ -295,6 +297,10 @@ export function Votometro() {
       rolarPara('palco-mapa', -80)
       await new Promise((ok) => setTimeout(ok, 700))
     }
+    if (window.innerWidth < 640) {
+      setExpandido(true)
+      await new Promise((ok) => setTimeout(ok, 480))
+    }
     if (cena.current) await cena.current.voarPara(uf)
     setAberto(uf)
   }
@@ -302,6 +308,7 @@ export function Votometro() {
   async function fechar() {
     setAberto(null)
     await cena.current?.voltar()
+    setExpandido(false)
   }
 
   return (
@@ -358,7 +365,7 @@ export function Votometro() {
           id="palco-mapa"
           data-sem-barra
           ref={palco}
-          className="relative -mx-5 mt-8 h-[62svh] max-h-[560px] min-h-[470px] overflow-hidden rounded-[22px] sm:mx-0 sm:h-[82svh] sm:max-h-[820px] sm:min-h-[540px] bg-[radial-gradient(90%_70%_at_50%_35%,#11286b_0%,#081a52_45%,#040B26_100%)] sm:mt-10 sm:rounded-[36px]"
+          className={`relative -mx-5 mt-8 overflow-hidden transition-[height,max-height] duration-500 ease-out ${expandido ? 'h-[84svh] max-h-[760px]' : 'h-[62svh] max-h-[560px]'} min-h-[470px] rounded-[22px] sm:mx-0 sm:h-[82svh] sm:max-h-[820px] sm:min-h-[540px] bg-[radial-gradient(90%_70%_at_50%_35%,#11286b_0%,#081a52_45%,#040B26_100%)] sm:mt-10 sm:rounded-[36px]`}
         >
           <canvas ref={tela} className="absolute inset-0 h-full w-full" aria-label="Mapa 3D do Brasil por estado" />
           <div ref={camada} className="pointer-events-none absolute inset-0" aria-hidden />

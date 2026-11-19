@@ -115,6 +115,8 @@ export class CenaMapa {
   private medidas = new Map<string, { w: number; h: number }>()
   private desvios = new Map<string, { x: number; y: number }>()
   private arranjoSujo = true
+  /** Deslocamento de tela que centraliza o mapa inteiro (px). */
+  private vo = { x: 0, y: 0 }
 
   aoPassar?: (uf: string | null, x: number, y: number) => void
   aoClicar?: (uf: string) => void
@@ -312,11 +314,17 @@ export class CenaMapa {
     this.camera.far = Math.max(120, 60 * hi)
     const cx = (b.x0 + b.x1) / 2
     const cy = (b.y0 + b.y1) / 2 + 0.04 // um pouco abaixo do centro
-    this.camera.setViewOffset(this.w, this.h, (cx * this.w) / 2, (-cy * this.h) / 2, this.w, this.h)
-    this.camera.updateProjectionMatrix()
+    this.vo = { x: (cx * this.w) / 2, y: (-cy * this.h) / 2 }
+    this.aplicarDeslocamento(this.selecionado || this.voando ? 0 : this.vo.x, this.selecionado || this.voando ? 0 : this.vo.y)
     if (!this.selecionado && !this.voando) {
       this.camera.position.copy(this.posBase)
       this.camera.lookAt(this.olhar)
+    } else if (this.selecionado && !this.voando) {
+      // tela mudou com um estado aberto: reenquadra o estado no espaço livre
+      const { P2, L1 } = this.alvoDoVoo(this.estados.get(this.selecionado)!)
+      this.camera.position.copy(P2)
+      this.camera.lookAt(L1)
+      this.olharSel = L1
     } else {
       this.camera.position.copy(pos0)
       this.camera.quaternion.copy(q0)
@@ -480,6 +488,42 @@ export class CenaMapa {
     this.camera.updateMatrixWorld()
   }
 
+  private aplicarDeslocamento(x: number, y: number) {
+    if (Math.abs(x) < 0.01 && Math.abs(y) < 0.01) this.camera.clearViewOffset()
+    else this.camera.setViewOffset(this.w, this.h, x, y, this.w, this.h)
+    this.camera.updateProjectionMatrix()
+  }
+
+  /**
+   * Ponto final do voo: o estado inteiro, centralizado no espaço que o painel deixa livre
+   * (faixa de cima no celular/tablet, metade esquerda no desktop).
+   */
+  private alvoDoVoo(e: Estado) {
+    const cam = this.camera.clone()
+    cam.clearViewOffset()
+    cam.updateProjectionMatrix()
+    const largo = window.innerWidth >= 1024 // mesmo ponto de quebra do painel (lg)
+    const hf = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2))
+    const visW = 2 * hf * cam.aspect
+    const visH = 2 * hf
+    // fração da tela livre e onde fica o centro dela (NDC)
+    const livreW = largo ? 0.42 : 0.86
+    const livreH = largo ? 0.78 : 0.2
+    const tx = largo ? -0.5 : 0
+    const ty = largo ? 0 : 0.7
+    const dist = Math.min(30, Math.max(3, (e.tamanho * 1.05) / (livreW * visW), (e.tamanho * 0.8) / (livreH * visH)))
+    const D = new THREE.Vector3(0, -0.6, 0.8)
+    const L = e.centro.clone()
+    const P = L.clone().addScaledVector(D, dist)
+    cam.position.copy(P)
+    cam.lookAt(L)
+    cam.updateMatrixWorld()
+    const direita = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0)
+    const cima = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1)
+    const desvio = direita.multiplyScalar(-tx * dist * hf * cam.aspect).add(cima.multiplyScalar(-ty * dist * hf))
+    return { P2: P.add(desvio), L1: L.add(desvio) }
+  }
+
   /** Voa até o estado atravessando as nuvens. */
   async voarPara(uf: string) {
     const e = this.estados.get(uf)
@@ -493,18 +537,12 @@ export class CenaMapa {
       o.topo.userData.de = o.topo.color.clone()
       o.topo.userData.para = alvo
     }
-    const tam = Math.min(2.6, Math.max(0.75, e.tamanho / 2.2))
-    // o painel ocupa a direita (desktop) ou a metade de baixo (celular): o estado fica no espaço livre
-    const largo = this.w / this.h > 1.1
-    // celular: o painel cobre ~3/4 de baixo, então o estado sobe para a faixa de cima
-    const desvio = largo ? new THREE.Vector3(1.55 * tam, 0, 0) : new THREE.Vector3(0, -2.6 * tam, 0)
-    const longe = largo ? 1 : 1.3
+    const { P2, L1 } = this.alvoDoVoo(e)
     const P0 = this.camera.position.clone()
-    const P2 = e.centro.clone().add(desvio).add(new THREE.Vector3(0, -2.7 * tam * longe, 3.6 * tam * longe))
     const P1 = P0.clone().lerp(P2, 0.5).add(new THREE.Vector3(0, 0, 3.5))
     const L0 = this.olhar.clone()
-    const L1 = e.centro.clone().add(desvio)
     this.olharSel = L1.clone()
+    const vo0 = { ...this.vo }
     // posiciona as nuvens do voo ao redor do caminho, na altura que a câmera atravessa
     this.nuvensVoo.forEach((n, i) => {
       const k = 0.35 + (i / this.nuvensVoo.length) * 0.45
@@ -516,6 +554,8 @@ export class CenaMapa {
       n.fase = k
     })
     await tween(2.1, (k) => {
+      // o deslocamento de enquadramento do mapa inteiro some durante o voo
+      this.aplicarDeslocamento(vo0.x * (1 - k), vo0.y * (1 - k))
       this.camera.position.copy(this.bezier(P0, P1, P2, k))
       const look = L0.clone().lerp(L1, ease.inOutCubic(Math.min(1, k * 1.25)))
       this.camera.lookAt(look)
@@ -541,6 +581,7 @@ export class CenaMapa {
     }
     this.selecionado = null
     await tween(1.3, (k) => {
+      this.aplicarDeslocamento(this.vo.x * k, this.vo.y * k)
       this.camera.position.lerpVectors(P0, this.posBase, k)
       this.camera.lookAt(L0.clone().lerp(this.olhar, k))
       for (const o of this.estados.values()) o.topo.color.copy((o.topo.userData.de as THREE.Color).clone().lerp(o.topo.userData.para as THREE.Color, k))
