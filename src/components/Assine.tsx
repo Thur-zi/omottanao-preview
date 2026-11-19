@@ -259,15 +259,6 @@ export function Assine() {
             </p>
           </Surge>
 
-          <Surge atraso={0.2} className="mt-9 flex max-w-[460px] items-start gap-3.5 rounded-2xl border border-azul-vivo/30 bg-azul/15 p-4">
-            <span className="relative mt-1.5 flex h-2.5 w-2.5 shrink-0">
-              <span className="absolute inset-0 animate-ping rounded-full bg-azul-vivo opacity-75" />
-              <span className="relative h-2.5 w-2.5 rounded-full bg-azul-vivo" />
-            </span>
-            <p className="text-[15px] leading-snug text-white/85">
-              <b className="text-white">Agora:</b> o PL decide nos próximos dias se apoia Motta ou lança candidato próprio.
-            </p>
-          </Surge>
 
           {/* arquivado: liga em Painel → Configurações → "Mostrar contagem regressiva" */}
           {CONFIG.mostrarContagem && (
