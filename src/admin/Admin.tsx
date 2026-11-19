@@ -3,7 +3,7 @@
  * No primeiro acesso, a pessoa cadastra o celular lendo um QR code.
  */
 import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react'
-import { KeyRound, Lock, ShieldCheck, Smartphone } from 'lucide-react'
+import { KeyRound, Lock, ShieldCheck, Smartphone, UserPlus } from 'lucide-react'
 import QRCode from 'qrcode'
 import { ErroApi, api } from './api'
 import { Aviso, entrada } from './ui'
@@ -49,7 +49,69 @@ function Codigo({ valor, mudar }: { valor: string; mudar: (v: string) => void })
   )
 }
 
+/** Cadastro pelo link de convite (#convite=…): nome, usuário e senha. O celular é cadastrado no primeiro login. */
+function Cadastro({ token, pronto }: { token: string; pronto: (usuario: string) => void }) {
+  const [estado, setEstado] = useState<'verificando' | 'valido' | 'invalido'>('verificando')
+  const [motivo, setMotivo] = useState('')
+  const [f, setF] = useState({ nome: '', usuario: '', senha: '', confirma: '' })
+  const [erro, setErro] = useState('')
+  const [ocupado, setOcupado] = useState(false)
+
+  useEffect(() => {
+    api(`convite/${token}`)
+      .then(() => setEstado('valido'))
+      .catch((e: ErroApi) => {
+        setMotivo(e.motivo)
+        setEstado('invalido')
+      })
+  }, [token])
+
+  async function enviar(ev: React.FormEvent) {
+    ev.preventDefault()
+    setErro('')
+    if (f.senha !== f.confirma) return setErro('As senhas não conferem.')
+    setOcupado(true)
+    try {
+      await api(`convite/${token}`, { corpo: { nome: f.nome, usuario: f.usuario, senha: f.senha } })
+      pronto(f.usuario.trim().toLowerCase())
+    } catch (e) {
+      setErro((e as ErroApi).motivo)
+    } finally {
+      setOcupado(false)
+    }
+  }
+
+  if (estado === 'verificando') return <div className="grid min-h-screen place-items-center bg-azul-fundo text-white/60">Conferindo o convite…</div>
+  if (estado === 'invalido')
+    return (
+      <Moldura icone={<UserPlus size={20} />} titulo="Link indisponível" sub={motivo || 'Este link de cadastro não vale mais.'}>
+        <a href="/admin/" className="btn-azul h-12 w-full text-[16px]">
+          Ir para o login
+        </a>
+      </Moldura>
+    )
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value })
+  return (
+    <Moldura icone={<UserPlus size={20} />} titulo="Criar acesso" sub="Você foi convidado para o painel. Depois, no primeiro login, você cadastra o celular.">
+      <form onSubmit={enviar} className="space-y-3">
+        <input className={entrada} placeholder="Seu nome" autoComplete="name" value={f.nome} onChange={set('nome')} autoFocus />
+        <input className={entrada} placeholder="Usuário (ex.: ana.souza)" autoComplete="username" autoCapitalize="none" value={f.usuario} onChange={set('usuario')} />
+        <input className={entrada} type="password" placeholder="Senha (mín. 10 caracteres)" autoComplete="new-password" value={f.senha} onChange={set('senha')} />
+        <input className={entrada} type="password" placeholder="Repita a senha" autoComplete="new-password" value={f.confirma} onChange={set('confirma')} />
+        {erro && <Aviso>{erro}</Aviso>}
+        <button disabled={ocupado || !f.nome || !f.usuario || f.senha.length < 10 || !f.confirma} className="btn-azul h-12 w-full text-[16px] disabled:opacity-60">
+          {ocupado ? 'Criando…' : 'Criar meu acesso'}
+        </button>
+      </form>
+    </Moldura>
+  )
+}
+
+const tokenConvite = () => location.hash.match(/^#convite=([a-f0-9]{64})$/)?.[1] ?? null
+
 export function Admin() {
+  const [convite, setConvite] = useState(tokenConvite)
+  const [aviso, setAviso] = useState('')
   const [etapa, setEtapa] = useState<Etapa>('carregando')
   const [eu, setEu] = useState<Eu | null>(null)
   const [usuario, setUsuario] = useState('')
@@ -117,6 +179,20 @@ export function Admin() {
     setEtapa('login')
   }
 
+  if (convite)
+    return (
+      <Cadastro
+        token={convite}
+        pronto={(u) => {
+          history.replaceState(null, '', '/admin/')
+          setConvite(null)
+          setUsuario(u)
+          setAviso('Acesso criado. Entre com sua senha para cadastrar o celular.')
+          setEtapa('login')
+        }}
+      />
+    )
+
   if (etapa === 'carregando') return <div className="grid min-h-screen place-items-center bg-azul-fundo text-white/60">Carregando…</div>
 
   if (etapa === 'login')
@@ -125,6 +201,7 @@ export function Admin() {
         <form onSubmit={entrar} className="space-y-3">
           <input className={entrada} placeholder="Usuário" autoComplete="username" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoFocus />
           <input className={entrada} type="password" placeholder="Senha" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+          {aviso && !erro && <Aviso tipo="ok">{aviso}</Aviso>}
           {erro && <Aviso>{erro}</Aviso>}
           <button disabled={ocupado || !usuario || !senha} className="btn-azul h-12 w-full text-[16px] disabled:opacity-60">
             {ocupado ? 'Entrando…' : 'Entrar'}

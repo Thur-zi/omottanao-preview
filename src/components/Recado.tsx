@@ -123,7 +123,7 @@ export function Recado() {
         </h2>
         <Surge atraso={0.15}>
           <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-azul-tinta/65">
-            Você votou num deputado de direita. Ele precisa saber que o seu voto não foi para eleger o Motta. Monte o recado e mande nos grupos e nas redes dele.
+            Ele pediu seu voto na campanha. <b className="font-bold text-azul-tinta">Agora é você quem pede coerência.</b> Gere seu card e poste nas suas redes.
           </p>
         </Surge>
 

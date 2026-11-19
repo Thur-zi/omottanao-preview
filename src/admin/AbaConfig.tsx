@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Save, ShieldOff, Trash2, UserPlus } from 'lucide-react'
+import { Check, Copy, Link2, Save, ShieldOff, Trash2, UserPlus } from 'lucide-react'
 import { ErroApi, api, dataHora } from './api'
 import { Aviso, Botao, Campo, Cartao, Janela, Vazio, entrada } from './ui'
 
@@ -104,7 +104,7 @@ export function AbaConfig() {
 
 type Adm = { id: number; usuario: string; nome: string; totp_ativo: number; ultimo_login: string | null; criado_em: string }
 
-export function AbaEquipe() {
+function ListaEquipe() {
   const [lista, setLista] = useState<{ itens: Adm[]; eu: number } | null>(null)
   const [novo, setNovo] = useState<{ usuario: string; nome: string; senha: string } | null>(null)
   const [erro, setErro] = useState('')
@@ -196,5 +196,132 @@ export function AbaEquipe() {
         </Janela>
       )}
     </Cartao>
+  )
+}
+
+type Convite = { id: number; nota: string; criado_por_usuario: string | null; criado_em: string; expira_em: string; usado_em: string | null; usado_por: string | null }
+
+/** Links de cadastro: uso único, valem alguns dias. O link completo só aparece na hora de gerar. */
+function Convites() {
+  const [itens, setItens] = useState<Convite[] | null>(null)
+  const [nota, setNota] = useState('')
+  const [dias, setDias] = useState(3)
+  const [gerado, setGerado] = useState<{ link: string; expira_em: string } | null>(null)
+  const [copiado, setCopiado] = useState(false)
+  const [erro, setErro] = useState('')
+  const carregar = () => api<{ itens: Convite[] }>('convites').then((r) => setItens(r.itens))
+  useEffect(() => {
+    carregar()
+  }, [])
+
+  async function gerar(e: React.FormEvent) {
+    e.preventDefault()
+    setErro('')
+    try {
+      const r = await api<{ link: string; expira_em: string }>('convites', { corpo: { nota, dias } })
+      setGerado(r)
+      setCopiado(false)
+      setNota('')
+      carregar()
+    } catch (er) {
+      setErro((er as ErroApi).motivo)
+    }
+  }
+
+  async function copiar() {
+    if (!gerado) return
+    try {
+      await navigator.clipboard.writeText(gerado.link)
+      setCopiado(true)
+    } catch {
+      setCopiado(false)
+    }
+  }
+
+  const pendentes = itens?.filter((c) => !c.usado_em) ?? []
+  const usados = itens?.filter((c) => c.usado_em) ?? []
+
+  return (
+    <Cartao titulo="Links de cadastro" sub="Mande o link para quem vai entrar na equipe. Cada link vale para uma pessoa só e expira sozinho.">
+      <form onSubmit={gerar} className="flex flex-wrap items-end gap-3">
+        <div className="min-w-[200px] flex-1">
+          <Campo rotulo="Para quem (opcional)">
+            <input className={entrada} placeholder="Ex.: Ana, da comunicação" value={nota} onChange={(e) => setNota(e.target.value)} maxLength={80} />
+          </Campo>
+        </div>
+        <Campo rotulo="Vale por">
+          <select className={`${entrada} w-auto pr-8`} value={dias} onChange={(e) => setDias(Number(e.target.value))}>
+            <option value={1}>1 dia</option>
+            <option value={3}>3 dias</option>
+            <option value={7}>7 dias</option>
+          </select>
+        </Campo>
+        <Botao type="submit">
+          <Link2 size={15} /> Gerar link
+        </Botao>
+      </form>
+      {erro && (
+        <div className="mt-3">
+          <Aviso>{erro}</Aviso>
+        </div>
+      )}
+      {gerado && (
+        <div className="mt-4 rounded-2xl border border-azul/30 bg-azul-gelo/60 p-4">
+          <p className="text-[12.5px] font-extrabold uppercase tracking-[0.1em] text-azul-profundo">Link novo · copie agora (ele não aparece de novo)</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <code className="min-w-0 flex-1 break-all rounded-lg bg-white px-3 py-2 font-mono text-[12.5px]">{gerado.link}</code>
+            <Botao type="button" variante="linha" onClick={copiar}>
+              {copiado ? <Check size={15} /> : <Copy size={15} />} {copiado ? 'Copiado' : 'Copiar'}
+            </Botao>
+          </div>
+          <p className="mt-2 text-[12.5px] text-azul-tinta/60">Vale até {dataHora(gerado.expira_em)}. A pessoa cria usuário e senha e, no primeiro login, cadastra o celular.</p>
+        </div>
+      )}
+      <div className="mt-5">
+        <p className="text-[12.5px] font-extrabold uppercase tracking-[0.1em] text-azul-tinta/55">Aguardando cadastro</p>
+        {!itens ? (
+          <Vazio texto="Carregando…" />
+        ) : pendentes.length ? (
+          <ul className="mt-1 divide-y divide-azul-tinta/[0.06]">
+            {pendentes.map((c) => (
+              <li key={c.id} className="flex flex-wrap items-center gap-3 py-2.5">
+                <div className="min-w-0 flex-1 text-[13.5px]">
+                  <b>{c.nota || 'Sem nome'}</b>
+                  <span className="block text-[12.5px] text-azul-tinta/55">
+                    gerado por {c.criado_por_usuario ?? '—'} em {dataHora(c.criado_em)} · vale até {dataHora(c.expira_em)}
+                  </span>
+                </div>
+                <Botao
+                  variante="fantasma"
+                  onClick={async () => {
+                    if (!window.confirm('Cancelar este link? Quem tiver ele não consegue mais se cadastrar.')) return
+                    await api(`convites/${c.id}`, { metodo: 'DELETE' })
+                    carregar()
+                  }}
+                >
+                  <Trash2 size={14} /> Cancelar
+                </Botao>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-1 text-[13.5px] text-azul-tinta/50">Nenhum link aberto.</p>
+        )}
+        {usados.length > 0 && (
+          <p className="mt-3 text-[12.5px] text-azul-tinta/55">
+            Usados nos últimos 7 dias: {usados.map((c) => `${c.usado_por} (${dataHora(c.usado_em!)})`).join(' · ')}
+          </p>
+        )}
+      </div>
+    </Cartao>
+  )
+}
+
+export function AbaEquipe() {
+  return (
+    <div className="space-y-5">
+      <Convites />
+      <ListaEquipe />
+    </div>
   )
 }

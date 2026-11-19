@@ -68,6 +68,42 @@ async function login(req: Request, env: Env) {
   return json({ ok: true, etapa: a.totp_ativo ? 'codigo' : 'configurar' }, 200, { 'set-cookie': cookie(token, HORAS * 3600) })
 }
 
+/* ------------------------------------------------------------------ */
+/* Link de cadastro (sem login): confere o convite e cria o acesso     */
+/* ------------------------------------------------------------------ */
+
+async function conviteAberto(req: Request, env: Env, token: string, metodo: string) {
+  if (!/^[a-f0-9]{64}$/.test(token)) return erro('Link inválido.', 404)
+  const ip = await ipHash(req, env)
+  if (!(await dentroDoLimite(env.DB, `convite:ip:${ip}`, 20, 900))) return erro('Muitas tentativas. Espere 15 minutos.', 429)
+  const th = await sha256(token)
+  const c = await env.DB.prepare(`SELECT id, nota, expira_em, usado_em FROM convites WHERE token_hash = ?`).bind(th).first<{ id: number; nota: string; expira_em: string; usado_em: string | null }>()
+  if (!c || c.usado_em || c.expira_em <= agora()) return erro('Este link de cadastro expirou ou já foi usado. Peça um novo a quem te convidou.', 410)
+  if (metodo === 'GET') return json({ ok: true, nota: c.nota, expira_em: c.expira_em })
+  if (metodo !== 'POST') return erro('rota', 404)
+
+  const b = await corpo<{ usuario?: string; nome?: string; senha?: string }>(req, 2000)
+  const usuario = limpa(b?.usuario, 80).toLowerCase()
+  const nome = limpa(b?.nome, 80)
+  const senha = typeof b?.senha === 'string' ? b.senha : ''
+  if (!nome) return erro('Diga seu nome.')
+  if (!/^[a-z0-9._@-]{3,80}$/.test(usuario)) return erro('Usuário: letras, números, ponto, hífen ou e-mail.')
+  if (senha.length < 10) return erro('Senha com pelo menos 10 caracteres.')
+  // reserva o convite primeiro (uso único, mesmo com dois cliques ao mesmo tempo)
+  const reserva = await env.DB.prepare(`UPDATE convites SET usado_em = ?1, usado_por = ?2 WHERE id = ?3 AND usado_em IS NULL AND expira_em > ?1`).bind(agora(), usuario, c.id).run()
+  if (!reserva.meta.changes) return erro('Este link de cadastro expirou ou já foi usado.', 410)
+  const sal = aleatorio(16)
+  try {
+    await env.DB.prepare(`INSERT INTO admins (usuario, nome, senha_hash, senha_sal) VALUES (?, ?, ?, ?)`).bind(usuario, nome, await hashSenha(senha, sal), sal).run()
+  } catch {
+    // usuário já existe: devolve o convite para a pessoa tentar outro nome
+    await env.DB.prepare(`UPDATE convites SET usado_em = NULL, usado_por = NULL WHERE id = ?`).bind(c.id).run()
+    return erro('Esse usuário já existe. Escolha outro.')
+  }
+  await auditar(env.DB, null, 'cadastro_por_convite', { usuario, convite: c.id })
+  return json({ ok: true })
+}
+
 async function subirNivel(env: Env, auth: Auth) {
   await env.DB.batch([
     env.DB.prepare(`UPDATE sessoes SET nivel = 2 WHERE token_hash = ?`).bind(auth.sessao.token_hash),
@@ -358,6 +394,7 @@ export async function rotaAdmin(ctx: Ctx): Promise<Response> {
   if (metodo !== 'GET' && req.headers.get('x-omn-painel') !== '1') return erro('origem', 403)
 
   if (r0 === 'login' && metodo === 'POST') return login(req, env)
+  if (r0 === 'convite' && r1) return conviteAberto(req, env, r1, metodo)
 
   const auth = await autenticar(req, env.DB)
   if (r0 === 'sair' && metodo === 'POST') {
@@ -499,6 +536,37 @@ export async function rotaAdmin(ctx: Ctx): Promise<Response> {
       return json({ ok: true })
     }
   }
+  /* ---- links de cadastro ---- */
+  if (r0 === 'convites') {
+    if (metodo === 'GET') {
+      const r = await env.DB.prepare(
+        `SELECT id, nota, criado_por_usuario, criado_em, expira_em, usado_em, usado_por FROM convites
+         WHERE usado_em IS NULL AND expira_em > ?1 OR usado_em > ?2 ORDER BY id DESC LIMIT 30`,
+      )
+        .bind(agora(), new Date(Date.now() - 7 * 86400_000).toISOString())
+        .all()
+      return json({ itens: r.results })
+    }
+    if (metodo === 'POST' && !r1) {
+      const b = await corpo<{ nota?: string; dias?: number }>(req, 1000)
+      const dias = Math.min(7, Math.max(1, Number(b?.dias) || 3))
+      const token = aleatorio(32)
+      const expira = new Date(Date.now() + dias * 86400_000).toISOString()
+      await env.DB.prepare(`INSERT INTO convites (token_hash, nota, criado_por, criado_por_usuario, expira_em) VALUES (?, ?, ?, ?, ?)`)
+        .bind(await sha256(token), limpa(b?.nota, 80), auth.admin.id, auth.admin.usuario, expira)
+        .run()
+      await auditar(env.DB, auth.admin, 'gerou_convite', { nota: limpa(b?.nota, 80), dias })
+      // o token só aparece agora; no banco fica o hash
+      return json({ ok: true, link: `${url.origin}/admin/#convite=${token}`, expira_em: expira })
+    }
+    const alvo = Number(r1)
+    if (alvo && metodo === 'DELETE') {
+      await env.DB.prepare(`DELETE FROM convites WHERE id = ? AND usado_em IS NULL`).bind(alvo).run()
+      await auditar(env.DB, auth.admin, 'revogou_convite', { id: alvo })
+      return json({ ok: true })
+    }
+  }
+
   if (r0 === 'senha' && metodo === 'POST') {
     const b = await corpo<{ atual?: string; nova?: string }>(req, 2000)
     if (!iguais(await hashSenha(String(b?.atual ?? ''), auth.admin.senha_sal), auth.admin.senha_hash)) return erro('Senha atual incorreta.', 401)
