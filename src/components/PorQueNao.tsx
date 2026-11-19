@@ -15,7 +15,7 @@ function Recorte({ mtv, i }: { mtv: Motivo; i: number }) {
   return (
     <article
       data-cartao
-      className="group relative w-[78vw] max-w-[380px] shrink-0 pt-5 transition-transform duration-500 hover:z-10 hover:!rotate-0 hover:scale-[1.03] sm:w-[380px]"
+      className="group relative w-[78vw] max-w-[380px] shrink-0 cursor-pointer pt-5 transition-transform duration-500 hover:z-10 hover:!rotate-0 hover:scale-[1.03] sm:w-[380px]"
       style={{ transform: `rotate(${GIROS[i % GIROS.length]}deg)` }}
     >
       {/* fita adesiva */}
@@ -33,9 +33,9 @@ function Recorte({ mtv, i }: { mtv: Motivo; i: number }) {
           <p className="text-[12px] font-bold text-[#15110d]/55">
             Fonte:{' '}
             {mtv.url ? (
-              <a href={mtv.url} target="_blank" rel="noopener" draggable={false} className="inline-flex items-center gap-0.5 text-[#15110d] underline">
+              <span className="inline-flex items-center gap-0.5 text-[#15110d] underline group-hover:text-vermelho">
                 {mtv.fonte} <ArrowUpRight size={12} />
-              </a>
+              </span>
             ) : (
               mtv.fonte
             )}
@@ -47,8 +47,20 @@ function Recorte({ mtv, i }: { mtv: Motivo; i: number }) {
           aria-hidden
           className="absolute -right-3 bottom-16 rotate-[-14deg] rounded-md border-[3px] border-vermelho/85 px-2.5 pb-0.5 pt-1 font-titulo text-[22px] font-black uppercase leading-none text-vermelho/85 [font-stretch:70%]"
         >
-          Lembre disso
+          {mtv.url ? 'Clique e confira' : 'Lembre disso'}
         </span>
+        {/* o recorte inteiro abre a matéria (arrastar o carrossel não abre: ver onClickCapture) */}
+        {mtv.url && (
+          <a
+            href={mtv.url}
+            target="_blank"
+            rel="noopener"
+            draggable={false}
+            className="absolute inset-0 z-[2] rounded-[2px] focus-visible:outline focus-visible:outline-4 focus-visible:outline-vermelho"
+            aria-label={`${mtv.titulo}: abrir a matéria (${mtv.fonte})`}
+            data-rastreio="cta:fonte_recorte"
+          />
+        )}
       </div>
     </article>
   )

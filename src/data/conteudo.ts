@@ -42,7 +42,6 @@ export const MOTIVOS: Motivo[] = [
   { tag: "Cassação", titulo: "Tirou o mandato de Eduardo Bolsonaro", texto: "A Mesa comandada por Motta declarou a perda dos mandatos de Eduardo Bolsonaro e Alexandre Ramagem. Antes, já tinha barrado Eduardo como líder da minoria.", fonte: "Congresso em Foco, 18/12/2025", url: "https://www.congressoemfoco.com.br/noticia/115035/hugo-motta-determina-cassacao-de-ramagem-e-eduardo-bolsonaro" },
   { tag: "Zambelli", titulo: "Queria cassar Zambelli", texto: "Motta disse que cassar Carla Zambelli era “a única alternativa”. O plenário salvou o mandato; depois o STF anulou a votação.", fonte: "Congresso em Foco, 09/06/2025", url: "https://www.congressoemfoco.com.br/noticia/109244/hugo-diz-que-camara-vai-cassar-carla-zambelli--e-a-unica-alternativa" },
   { tag: "Aliança", titulo: "É o candidato que o PT apoia", texto: "Motta busca mais dois anos no comando da Câmara com o apoio formal de 15 partidos. O PT está entre eles.", fonte: "Metrópoles, 11/11/2026", url: "https://www.metropoles.com/brasil/sem-consenso-pl-reune-bancada-eleita-da-camara-para-discutir-apoio-a-motta" },
-  { tag: "Racha", titulo: "Nem o PL aguenta", texto: "Nikolas Ferreira: se o PL apoiar Motta, fica “insustentável” a permanência dele no partido.", fonte: "InfoMoney, 18/11/2026", url: "https://www.infomoney.com.br/politica/nikolas-ameaca-deixar-pl-se-partido-apoiar-reeleicao-de-hugo-motta/" },
 ]
 
 /** "Título · detalhe" (o detalhe é opcional). Editável no painel. */
