@@ -93,8 +93,16 @@ export function PorQueNao() {
       aplicarRef.current()
     }
     const aplicar = () => {
-      if (st.x >= st.metade) st.x -= st.metade
-      if (st.x < 0) st.x += st.metade
+      // ao dar a volta no laço, o alvo das setas volta junto (senão ele persegue um alvo
+      // que nunca alcança e o carrossel dispara girando)
+      if (st.x >= st.metade) {
+        st.x -= st.metade
+        if (st.alvo !== null) st.alvo -= st.metade
+      }
+      if (st.x < 0) {
+        st.x += st.metade
+        if (st.alvo !== null) st.alvo += st.metade
+      }
       for (let i = 0; i < filhos.length; i++) {
         let pos = (((lefts[i] - base - st.x) % st.metade) + st.metade) % st.metade
         if (pos > st.metade - largs[i]) pos -= st.metade // entrando pela esquerda
