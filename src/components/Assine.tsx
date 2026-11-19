@@ -402,7 +402,8 @@ export function Assine() {
                       </AnimatePresence>
                     </div>
                     <AnimatePresence>
-                      {infoUf && (
+                      {/* arquivado: liga em Painel → Configurações → "Mostrar resumo do estado" */}
+                      {CONFIG.mostrarInfoEstado && infoUf && (
                         <m.p
                           className="flex items-center gap-2 rounded-xl bg-azul-gelo px-3.5 py-2.5 text-[13px] font-semibold text-azul-profundo"
                           initial={{ opacity: 0, height: 0 }}
@@ -476,7 +477,7 @@ export function Assine() {
                       </>
                     ) : (
                       <>
-                        <Stamp size={21} /> Carimbar meu NÃO
+                        <Stamp size={21} /> Carimbar: Motta Não
                       </>
                     )}
                   </button>

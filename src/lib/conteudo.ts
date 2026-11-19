@@ -49,6 +49,7 @@ function aplicar(r: Resposta) {
   CONFIG.candidatoFoto = c.candidato_foto || null // vazio = foto padrão (CANDIDATO.foto)
   CONFIG.previa = c.previa !== '0'
   CONFIG.mostrarContagem = c.mostrar_contagem === '1'
+  CONFIG.mostrarInfoEstado = c.mostrar_info_estado === '1'
   versao++
   ouvintes.forEach((f) => f())
 }

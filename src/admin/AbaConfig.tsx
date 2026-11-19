@@ -66,18 +66,25 @@ export function AbaConfig() {
               <input className={entrada} value={cfg[k] ?? ''} onChange={(e) => setCfg({ ...cfg, [k]: e.target.value })} />
             </Campo>
           ))}
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/10 p-3.5">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-5 w-5 accent-[#1F4FE0]"
-              checked={cfg.mostrar_contagem === '1'}
-              onChange={(e) => setCfg({ ...cfg, mostrar_contagem: e.target.checked ? '1' : '0' })}
-            />
-            <span className="text-[14px]">
-              <b>Mostrar contagem regressiva</b>
-              <span className="block text-[12.5px] opacity-60">No abaixo-assinado: dias até a votação e a lista "quem é o deputado / como cobrá-lo / atualizações". Desligado por enquanto.</span>
-            </span>
-          </label>
+          {(
+            [
+              ['mostrar_contagem', 'Mostrar contagem regressiva', 'No abaixo-assinado: dias até a votação e a lista "quem é o deputado / como cobrá-lo / atualizações".'],
+              ['mostrar_info_estado', 'Mostrar resumo do estado', 'No formulário, depois de escolher o estado: "Minas Gerais: 53 deputados, X já disseram NÃO".'],
+            ] as const
+          ).map(([k, titulo, dica]) => (
+            <label key={k} className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/10 p-3.5">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-5 w-5 accent-[#1F4FE0]"
+                checked={cfg[k] === '1'}
+                onChange={(e) => setCfg({ ...cfg, [k]: e.target.checked ? '1' : '0' })}
+              />
+              <span className="text-[14px]">
+                <b>{titulo}</b>
+                <span className="block text-[12.5px] opacity-60">{dica} Desligado por enquanto.</span>
+              </span>
+            </label>
+          ))}
           {msg && <Aviso tipo={msg.t}>{msg.m}</Aviso>}
           <Botao type="submit">
             <Save size={15} /> Salvar

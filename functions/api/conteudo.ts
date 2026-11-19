@@ -1,7 +1,7 @@
 /** GET /api/conteudo — o que o site público lê do painel (cache de 60 s na borda). */
 import { json, type Ctx } from '../../server/util'
 
-const PUBLICAS = ['whatsapp_numero', 'ga4_id', 'meta_pixel_id', 'responsavel', 'encarregado_nome', 'encarregado_email', 'candidato_foto', 'previa', 'mostrar_contagem']
+const PUBLICAS = ['whatsapp_numero', 'ga4_id', 'meta_pixel_id', 'responsavel', 'encarregado_nome', 'encarregado_email', 'candidato_foto', 'previa', 'mostrar_contagem', 'mostrar_info_estado']
 
 export const onRequestGet = async ({ request, env, waitUntil }: Ctx) => {
   const cache = (caches as unknown as { default: Cache }).default
