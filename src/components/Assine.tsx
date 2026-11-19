@@ -518,23 +518,17 @@ export function Assine() {
                           </li>
                         ))}
                       </ol>
-                      <a className="btn-zap mt-8 h-16 w-full text-[18px]" href={linkWhatsapp('confirmacao', feito.uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:confirmacao">
-                        <IconeWhatsapp /> Entrar no WhatsApp do Luiz
-                      </a>
-                      <div className="mt-4 grid grid-cols-2 gap-3">
-                        <button type="button" onClick={() => rolarPara('recado')} className="btn-linha h-12 text-[14px] text-white">
-                          Gerar meu card
-                        </button>
-                        <a
-                          className="btn-linha h-12 text-[14px] text-white"
-                          href={`https://wa.me/?text=${encodeURIComponent(`Assinei o NÃO ao Motta. Assine também: https://${CONFIG.site}`)}`}
-                          target="_blank"
-                          rel="noopener"
-                          data-rastreio="compartilhar:confirmacao"
-                        >
-                          <Send size={16} /> Chamar amigos
-                        </a>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (feito.uf) definirUF(feito.uf)
+                          rolarPara('recado')
+                        }}
+                        className="btn-branco mt-8 h-16 w-full text-[18px]"
+                        data-rastreio="cta:cobrar_deputado"
+                      >
+                        <Megaphone size={20} /> Quero cobrar meu deputado
+                      </button>
                     </>
                   )}
                 </div>

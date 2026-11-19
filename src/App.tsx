@@ -2,7 +2,6 @@ import { Suspense, lazy, useEffect, useState } from 'react'
 import { RolagemSuave } from './lib/movimento'
 import { Abertura } from './components/Abertura'
 import { Topo } from './components/Topo'
-import { Contexto } from './components/Contexto'
 import { BarraFixa } from './components/Rodape'
 import { Assine } from './components/Assine'
 
@@ -35,7 +34,6 @@ export default function App() {
       <main>
         <Abertura aberto={abertoNaCarga} aoAbrir={() => setAberto(true)} />
         <Assine />
-        <Contexto />
         {pronto && (
           <Suspense fallback={<div className="h-[100svh] bg-azul-fundo" />}>
             <Resto />

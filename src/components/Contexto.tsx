@@ -1,3 +1,4 @@
+/* Fora da página por enquanto (pedido do mandato). Para voltar: importar e montar <Contexto /> no App, depois do <Assine />. */
 import { useRef } from 'react'
 import { m, useScroll, useSpring, useTransform } from 'motion/react'
 import { LETREIRO } from '../data/conteudo'
