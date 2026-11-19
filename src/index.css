@@ -46,7 +46,7 @@
     font-stretch: 64%;
   }
   .titulo {
-    @apply font-titulo text-[3.1rem] font-black uppercase leading-[0.86] tracking-titulo sm:text-7xl lg:text-[6.4rem];
+    @apply font-titulo text-[3.1rem] font-black uppercase leading-[0.98] tracking-titulo sm:text-7xl lg:text-[6.4rem];
     font-stretch: 66%;
   }
   .titulo-md {
