@@ -38,7 +38,7 @@ export function Rodape() {
         </div>
         <div className="relative mx-auto aspect-square w-[min(78vw,400px)]">
           <img src={`${BASE}motta-760.webp`} alt="" aria-hidden loading="lazy" className="h-full w-full object-cover [mask-image:radial-gradient(closest-side,#000_70%,transparent)]" />
-          <Impressao className="absolute left-[24%] top-[14.6%] w-[56%] rotate-[12deg]" id="tinta-rodape" />
+          <Impressao className="absolute left-[30%] top-[15.7%] w-[57%] rotate-[16deg]" id="tinta-rodape" />
         </div>
       </div>
 

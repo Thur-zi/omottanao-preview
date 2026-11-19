@@ -485,7 +485,7 @@ export function Assine() {
                         animate={virada ? { scale: 1, opacity: 1 } : undefined}
                         transition={{ type: 'spring', stiffness: 380, damping: 18, delay: 0.75 }}
                       >
-                        Seu NÃO registrado
+                        Seu NÃO foi registrado
                       </m.div>
                       <h3 className="titulo-md mt-7 sm:text-5xl">Valeu, {feito.nome}.</h3>
                       <p className="mt-3 text-white/75">Sua assinatura nº {serie} entrou no abaixo-assinado de {NOMES_UF[feito.uf]}.</p>

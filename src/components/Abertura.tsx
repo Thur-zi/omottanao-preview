@@ -13,7 +13,7 @@ import type { CenaCarimbo } from '../three/carimbo'
 type Fase = 'espera' | 'golpe' | 'aberto'
 
 /** Testa do Motta, em fração da foto (x, y do centro), largura da marca e giro horário. */
-const ALVO = { x: 0.52, y: 0.235, largura: 0.56, giro: 12 }
+const ALVO = { x: 0.585, y: 0.245, largura: 0.57, giro: 16 }
 const PROPORCAO_MARCA = 160 / 520
 
 const BASE = import.meta.env.BASE_URL
@@ -326,7 +326,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
       </AnimatePresence>
 
       {/* depois do golpe: título, legendas e "explorar" */}
-      <m.div style={{ y: yTitulo, opacity: opTitulo }} className="pointer-events-none absolute inset-x-0 bottom-[12svh] z-20 px-4 text-center md:bottom-[10svh]">
+      <m.div style={{ y: yTitulo, opacity: opTitulo }} className="pointer-events-none absolute inset-x-0 bottom-[16svh] z-20 px-4 text-center md:bottom-[15svh]">
         <h1 className="display whitespace-nowrap text-[15.5vw] leading-[0.8] drop-shadow-[0_10px_40px_rgba(28,3,3,0.55)] md:text-[min(10vw,10.5rem)]">
           {['O', 'MOTTA', 'NÃO.'].map((p, i) => (
             <span key={p} className="-mt-[0.24em] inline-block overflow-hidden pb-[0.06em] pt-[0.24em] align-bottom">
@@ -367,13 +367,13 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
           <m.button
             type="button"
             onClick={() => rolarPara('assine', 0)}
-            className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1.5 px-6 py-2 font-sans text-[11px] font-extrabold uppercase tracking-rotulo text-white"
+            className="absolute inset-x-0 bottom-3 z-30 mx-auto flex w-max flex-col items-center gap-2 px-6 py-2 font-sans text-[11px] font-extrabold uppercase text-white"
             initial={aberto ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: EASE, delay: aberto ? 0 : 1.1 }}
             data-rastreio="explorar:abertura"
           >
-            Explorar
+            <span className="tracking-rotulo [margin-right:-0.24em]">Explorar</span>
             <span className="relative block h-10 w-6 overflow-hidden">
               <SetaBaixo className="absolute inset-0 h-10 w-6 animate-desce" />
             </span>

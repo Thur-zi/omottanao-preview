@@ -69,7 +69,7 @@ export function desenharCard(cv: HTMLCanvasElement, img: HTMLImageElement | null
     const lado = altoFoto * 1.12
     const x = (W - lado) / 2
     g.drawImage(img, x, -altoFoto * 0.04, lado, lado)
-    carimbo(g, x + lado * 0.52, -altoFoto * 0.04 + lado * 0.235, lado * 0.56, 12)
+    carimbo(g, x + lado * 0.585, -altoFoto * 0.04 + lado * 0.245, lado * 0.57, 16)
   }
   const vinheta = g.createLinearGradient(0, altoFoto * 0.55, 0, altoFoto)
   vinheta.addColorStop(0, 'rgba(4,11,38,0)')
