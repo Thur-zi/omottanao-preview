@@ -25,7 +25,7 @@ export function Rodape() {
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <button type="button" onClick={() => rolarPara('assine')} className="btn-azul h-16 px-9 text-[19px]" data-rastreio="cta:fechamento">
-              <Stamp size={21} /> Assine o NÃO
+              <Stamp size={21} /> Eu quero coerência
             </button>
             <a
               className="btn h-16 border-2 border-white/80 px-8 text-[17px] text-white hover:bg-white hover:text-vermelho"
@@ -112,7 +112,7 @@ export function BarraFixa({ ativa }: { ativa: boolean }) {
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           <button type="button" onClick={() => rolarPara('assine')} className="btn-azul h-[60px] w-full shadow-flutua" data-rastreio="cta:barra_fixa">
-            <Stamp size={20} /> Assine o NÃO
+            <Stamp size={20} /> Eu quero coerência
           </button>
         </m.div>
       )}

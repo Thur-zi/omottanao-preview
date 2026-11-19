@@ -59,7 +59,7 @@ export function Topo({ visivel }: { visivel: boolean }) {
                 </a>
               ))}
               <a href="#assine" onClick={(e) => (e.preventDefault(), ir('assine'))} className="btn-branco h-11 px-6 text-[15px]" data-rastreio="cta:topo">
-                Assine o NÃO
+                Eu quero coerência
               </a>
             </nav>
             <button
@@ -113,7 +113,7 @@ export function Topo({ visivel }: { visivel: boolean }) {
               transition={{ duration: 0.6, ease: EASE, delay: 0.4 }}
               data-rastreio="cta:menu"
             >
-              Assine o NÃO
+              Eu quero coerência
             </m.a>
           </m.div>
         )}
