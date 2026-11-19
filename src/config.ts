@@ -24,6 +24,8 @@ export const CONFIG = {
   mostrarContagem: false,
   /** Linha "Estado: N deputados, X já disseram NÃO" no formulário (arquivada; liga no painel). */
   mostrarInfoEstado: false,
+  /** Seção do votômetro (hemiciclo + mapa 3D) (arquivada; liga no painel). */
+  mostrarVotometro: false,
   responsavel: '[NOME / CNPJ DO RESPONSÁVEL]',
   encarregado: { nome: '[NOME DO ENCARREGADO]', email: '[EMAIL]' },
   /** Foto do candidato; o painel pode trocar. Padrão: foto oficial da Câmara (CC BY 3.0). */

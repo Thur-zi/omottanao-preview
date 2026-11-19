@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, m, useMotionValueEvent, useScroll } from 'motion/react'
 import { EASE, EASE_CINEMA, rolarPara } from '../lib/movimento'
 import { Logo } from './Marca'
+import { CONFIG } from '../config'
+import { useConteudo } from '../lib/conteudo'
 
 const LINKS = [
   ['votometro', 'Votômetro'],
@@ -11,6 +13,8 @@ const LINKS = [
 ] as const
 
 export function Topo({ visivel }: { visivel: boolean }) {
+  useConteudo()
+  const links = LINKS.filter(([id]) => id !== 'votometro' || CONFIG.mostrarVotometro)
   const [solido, setSolido] = useState(false)
   const [menu, setMenu] = useState(false)
   const { scrollY, scrollYProgress } = useScroll()
@@ -43,7 +47,7 @@ export function Topo({ visivel }: { visivel: boolean }) {
               <Logo className="text-[24px] sm:text-[27px]" />
             </a>
             <nav className="hidden items-center gap-8 lg:flex" aria-label="Principal">
-              {LINKS.map(([id, txt]) => (
+              {links.map(([id, txt]) => (
                 <a
                   key={id}
                   href={`#${id}`}
@@ -85,7 +89,7 @@ export function Topo({ visivel }: { visivel: boolean }) {
             transition={{ duration: 0.6, ease: EASE_CINEMA }}
           >
             <nav className="flex flex-col gap-1" aria-label="Menu">
-              {LINKS.map(([id, txt], i) => (
+              {links.map(([id, txt], i) => (
                 <m.a
                   key={id}
                   href={`#${id}`}

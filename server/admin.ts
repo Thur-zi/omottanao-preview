@@ -345,7 +345,7 @@ async function conteudo(req: Request, env: Env, auth: Auth, tabela: string, id: 
 /* Roteador                                                           */
 /* ------------------------------------------------------------------ */
 
-const CONFIG_CHAVES = ['whatsapp_numero', 'ga4_id', 'meta_pixel_id', 'responsavel', 'encarregado_nome', 'encarregado_email', 'candidato_foto', 'previa', 'mostrar_contagem', 'mostrar_info_estado']
+const CONFIG_CHAVES = ['whatsapp_numero', 'ga4_id', 'meta_pixel_id', 'responsavel', 'encarregado_nome', 'encarregado_email', 'candidato_foto', 'previa', 'mostrar_contagem', 'mostrar_info_estado', 'mostrar_votometro']
 
 export async function rotaAdmin(ctx: Ctx): Promise<Response> {
   const { request: req, env } = ctx

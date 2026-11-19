@@ -69,6 +69,7 @@ export function AbaConfig() {
           {(
             [
               ['mostrar_contagem', 'Mostrar contagem regressiva', 'No abaixo-assinado: dias até a votação e a lista "quem é o deputado / como cobrá-lo / atualizações".'],
+              ['mostrar_votometro', 'Mostrar o votômetro', 'A seção inteira: hemiciclo dos 513, mapa 3D e painel por estado (e o link no menu).'],
               ['mostrar_info_estado', 'Mostrar resumo do estado', 'No formulário, depois de escolher o estado: "Minas Gerais: 53 deputados, X já disseram NÃO".'],
             ] as const
           ).map(([k, titulo, dica]) => (

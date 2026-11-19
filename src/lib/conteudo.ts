@@ -50,6 +50,7 @@ function aplicar(r: Resposta) {
   CONFIG.previa = c.previa !== '0'
   CONFIG.mostrarContagem = c.mostrar_contagem === '1'
   CONFIG.mostrarInfoEstado = c.mostrar_info_estado === '1'
+  CONFIG.mostrarVotometro = c.mostrar_votometro === '1'
   versao++
   ouvintes.forEach((f) => f())
 }
