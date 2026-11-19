@@ -4,6 +4,9 @@ import { Abertura } from './components/Abertura'
 import { Topo } from './components/Topo'
 import { BarraFixa } from './components/Rodape'
 import { Assine } from './components/Assine'
+import { Contexto } from './components/Contexto'
+import { CONFIG } from './config'
+import { useConteudo } from './lib/conteudo'
 
 const Resto = lazy(() => import('./components/Resto'))
 
@@ -26,6 +29,7 @@ export default function App() {
   const [aberto, setAberto] = useState(() => !comAbertura())
   const [abertoNaCarga] = useState(aberto)
   const pronto = useOcioso()
+  useConteudo()
 
   return (
     <div className="min-h-screen overflow-x-clip">
@@ -34,6 +38,8 @@ export default function App() {
       <main>
         <Abertura aberto={abertoNaCarga} aoAbrir={() => setAberto(true)} />
         <Assine />
+        {/* arquivado: Painel → Arquivo → "Como funciona" */}
+        {CONFIG.mostrarComoFunciona && <Contexto />}
         {pronto && (
           <Suspense fallback={<div className="h-[100svh] bg-azul-fundo" />}>
             <Resto />

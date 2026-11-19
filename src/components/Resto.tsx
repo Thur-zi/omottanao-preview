@@ -18,7 +18,7 @@ export default function Resto() {
   }, [])
   return (
     <>
-      {/* arquivado: liga em Painel → Configurações → "Mostrar o votômetro" */}
+      {/* arquivado: Painel → Arquivo → "Votômetro" */}
       <Recado />
       {CONFIG.mostrarVotometro && <Votometro />}
       <PorQueNao />

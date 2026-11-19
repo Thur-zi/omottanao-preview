@@ -339,8 +339,8 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.35 } }}
             transition={{ duration: 1, ease: EASE, delay: 1.9 }}
           >
-            <span aria-hidden className="pointer-events-none mr-1.5 flex animate-cutuca-d items-center text-white drop-shadow-[0_2px_8px_rgba(28,3,3,0.6)] sm:mr-4">
-              <ChevronsRight size={30} strokeWidth={2.8} />
+            <span aria-hidden className="pointer-events-none mr-1 flex animate-cutuca-d items-center text-white drop-shadow-[0_2px_8px_rgba(28,3,3,0.6)] sm:mr-4">
+              <ChevronsRight strokeWidth={2.8} className="h-6 w-6 sm:h-[30px] sm:w-[30px]" />
             </span>
             <button
               ref={cta}
@@ -356,13 +356,13 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
               className="group relative grid place-items-center rounded-full transition-transform duration-300 ease-out">
               <span aria-hidden className="absolute inset-0 animate-respira rounded-full border-2 border-white/80" />
               <span aria-hidden className="absolute inset-0 animate-respira rounded-full border border-white/60 [animation-delay:1.2s]" />
-              <span className="btn-azul h-[62px] px-7 text-[18px] shadow-[0_24px_60px_-18px_rgba(4,11,38,0.9)] sm:h-[72px] sm:px-12 sm:text-[22px]">
+              <span className="btn-azul h-[60px] gap-2.5 px-6 text-[17px] shadow-[0_24px_60px_-18px_rgba(4,11,38,0.9)] sm:h-[72px] sm:px-12 sm:text-[22px]">
                 Eu quero coerência
-                <Stamp size={22} strokeWidth={2.4} aria-hidden className="hidden transition-transform duration-300 group-hover:translate-y-1 sm:block" />
+                <Stamp strokeWidth={2.4} aria-hidden className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:translate-y-1 sm:h-[22px] sm:w-[22px]" />
               </span>
             </button>
-            <span aria-hidden className="pointer-events-none ml-1.5 flex animate-cutuca-e items-center text-white drop-shadow-[0_2px_8px_rgba(28,3,3,0.6)] sm:ml-4">
-              <ChevronsLeft size={30} strokeWidth={2.8} />
+            <span aria-hidden className="pointer-events-none ml-1 flex animate-cutuca-e items-center text-white drop-shadow-[0_2px_8px_rgba(28,3,3,0.6)] sm:ml-4">
+              <ChevronsLeft strokeWidth={2.8} className="h-6 w-6 sm:h-[30px] sm:w-[30px]" />
             </span>
           </m.div>
         )}

@@ -223,13 +223,17 @@ export function Assine() {
 
   const inclinar = (e: React.PointerEvent) => {
     const el = inclina.current
-    if (!el || e.pointerType === 'touch' || reduz) return
+    if (!el || e.pointerType === 'touch' || reduz || virada) return
     const r = el.getBoundingClientRect()
     const x = (e.clientX - r.left) / r.width - 0.5
     const y = (e.clientY - r.top) / r.height - 0.5
     el.style.transform = `rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`
   }
   const soltar = () => inclina.current && (inclina.current.style.transform = '')
+  // depois de assinar o cartão fica parado (o botão não foge do cursor)
+  useEffect(() => {
+    if (virada && inclina.current) inclina.current.style.transform = ''
+  }, [virada])
 
   const infoUf = uf ? resumo(uf) : null
 
@@ -259,7 +263,20 @@ export function Assine() {
           </Surge>
 
 
-          {/* arquivado: liga em Painel → Configurações → "Mostrar contagem regressiva" */}
+          {/* arquivado: Painel → Arquivo → "Aviso Agora" */}
+          {CONFIG.mostrarAviso && (
+            <Surge atraso={0.2} className="mt-9 flex max-w-[460px] items-start gap-3.5 rounded-2xl border border-azul-vivo/30 bg-azul/15 p-4">
+              <span className="relative mt-1.5 flex h-2.5 w-2.5 shrink-0">
+                <span className="absolute inset-0 animate-ping rounded-full bg-azul-vivo opacity-75" />
+                <span className="relative h-2.5 w-2.5 rounded-full bg-azul-vivo" />
+              </span>
+              <p className="text-[15px] leading-snug text-white/85">
+                <b className="text-white">Agora:</b> {CONFIG.avisoTexto}
+              </p>
+            </Surge>
+          )}
+
+          {/* arquivado: Painel → Arquivo → "Contagem regressiva" */}
           {CONFIG.mostrarContagem && (
             <>
             <Surge atraso={0.25} className="mt-9">
@@ -307,6 +324,7 @@ export function Assine() {
                   }}
                   noValidate
                   aria-hidden={virada}
+                  style={{ pointerEvents: virada ? 'none' : undefined }}
                   className="relative col-start-1 row-start-1 rounded-[26px] bg-[#FBFAF6] p-6 text-azul-tinta shadow-[0_60px_120px_-40px_rgba(0,0,0,0.75)] [backface-visibility:hidden] sm:p-9"
                 >
                   {/* armadilha para robôs: invisível para pessoas */}
@@ -402,7 +420,7 @@ export function Assine() {
                       </AnimatePresence>
                     </div>
                     <AnimatePresence>
-                      {/* arquivado: liga em Painel → Configurações → "Mostrar resumo do estado" */}
+                      {/* arquivado: Painel → Arquivo → "Resumo do estado" */}
                       {CONFIG.mostrarInfoEstado && infoUf && (
                         <m.p
                           className="flex items-center gap-2 rounded-xl bg-azul-gelo px-3.5 py-2.5 text-[13px] font-semibold text-azul-profundo"
@@ -493,6 +511,7 @@ export function Assine() {
                   ref={verso}
                   tabIndex={-1}
                   aria-hidden={!virada}
+                  style={{ pointerEvents: virada ? undefined : 'none' }}
                   className="relative col-start-1 row-start-1 flex flex-col overflow-hidden rounded-[26px] bg-[linear-gradient(160deg,#1F4FE0_0%,#0E2E9A_45%,#081A52_100%)] p-7 text-white shadow-[0_60px_120px_-40px_rgba(0,0,0,0.75)] outline-none [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-10"
                 >
                   <span aria-hidden className="display pointer-events-none absolute -right-6 -top-10 select-none text-[13rem] leading-none text-white/[0.06]">NÃO</span>
@@ -509,7 +528,7 @@ export function Assine() {
                       <h3 className="titulo-md mt-7 sm:text-5xl">Valeu, {feito.nome}.</h3>
                       <p className="mt-3 text-white/75">{NOMES_UF[feito.uf]} ganhou mais uma voz contra o Motta.</p>
                       <ol className="mt-7 space-y-3.5">
-                        {['Feito, agora é cobrar.', 'Gere seu card e cobre o seu deputado.'].map((t, i) => (
+                        {(CONFIG.mostrarBotoesWhatsapp ? ['Feito, agora é cobrar.', 'Entre no WhatsApp do Luiz para saber quem cobrar.', 'Gere seu card e cobre o seu deputado.'] : ['Feito, agora é cobrar.', 'Gere seu card e cobre o seu deputado.']).map((t, i) => (
                           <li key={i} className="flex items-center gap-3.5 text-[15.5px]">
                             <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-extrabold ${i === 0 ? 'bg-white text-azul' : 'bg-white/15'}`}>
                               {i === 0 ? <Check size={16} strokeWidth={3} /> : i + 1}
@@ -529,6 +548,23 @@ export function Assine() {
                       >
                         <Megaphone size={20} /> Quero cobrar meu deputado
                       </button>
+                      {/* arquivado: Painel → Arquivo → "Botões de WhatsApp na confirmação" */}
+                      {CONFIG.mostrarBotoesWhatsapp && (
+                        <>
+                          <a className="btn-zap mt-4 h-14 w-full text-[16px]" href={linkWhatsapp('confirmacao', feito.uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:confirmacao">
+                            <IconeWhatsapp /> Entrar no WhatsApp do Luiz
+                          </a>
+                          <a
+                            className="btn-linha mt-3 h-12 w-full text-[14px] text-white"
+                            href={`https://wa.me/?text=${encodeURIComponent(`Assinei o NÃO ao Motta. Assine também: https://${CONFIG.site}`)}`}
+                            target="_blank"
+                            rel="noopener"
+                            data-rastreio="compartilhar:confirmacao"
+                          >
+                            <Send size={16} /> Chamar amigos
+                          </a>
+                        </>
+                      )}
                     </>
                   )}
                 </div>

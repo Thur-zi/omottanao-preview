@@ -26,6 +26,13 @@ export const CONFIG = {
   mostrarInfoEstado: false,
   /** Seção do votômetro (hemiciclo + mapa 3D) (arquivada; liga no painel). */
   mostrarVotometro: false,
+  /** Seção "Como funciona: o caminho até 1º de fevereiro" (arquivada). */
+  mostrarComoFunciona: false,
+  /** Aviso "Agora: …" no abaixo-assinado (arquivado; texto editável no painel). */
+  mostrarAviso: false,
+  avisoTexto: 'o PL decide nos próximos dias se apoia Motta ou lança candidato próprio.',
+  /** Botões de WhatsApp / gerar card / chamar amigos na confirmação (arquivados). */
+  mostrarBotoesWhatsapp: false,
   responsavel: '[NOME / CNPJ DO RESPONSÁVEL]',
   encarregado: { nome: '[NOME DO ENCARREGADO]', email: '[EMAIL]' },
   /** Foto do candidato; o painel pode trocar. Padrão: foto oficial da Câmara (CC BY 3.0). */

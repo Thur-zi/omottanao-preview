@@ -10,6 +10,7 @@ import { AbaAssinaturas } from './AbaAssinaturas'
 import { AbaConteudo } from './AbaConteudo'
 import { AbaConfig, AbaEquipe } from './AbaConfig'
 import { AbaAoVivo, AbaAuditoria } from './AbaRegistros'
+import { AbaArquivo } from './AbaArquivo'
 
 export type Resumo = {
   periodo: { dias: number; desde: string; uf: string | null }
@@ -42,6 +43,7 @@ const ABAS = [
   ['votometro', 'Votômetro'],
   ['motivos', 'Por que não'],
   ['pautas', 'Pautas'],
+  ['arquivo', 'Arquivo'],
   ['config', 'Configurações'],
   ['aovivo', 'Ao vivo'],
   ['auditoria', 'Auditoria'],
@@ -261,6 +263,7 @@ export default function Painel({ eu, sair }: { eu: Eu; sair: () => void }) {
         {aba === 'votometro' && <AbaConteudo tipo="posicoes" />}
         {aba === 'motivos' && <AbaConteudo tipo="motivos" />}
         {aba === 'pautas' && <AbaConteudo tipo="pautas" />}
+        {aba === 'arquivo' && <AbaArquivo />}
         {aba === 'config' && <AbaConfig />}
         {aba === 'aovivo' && <AbaAoVivo />}
         {aba === 'auditoria' && <AbaAuditoria />}

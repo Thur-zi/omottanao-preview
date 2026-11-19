@@ -1,4 +1,4 @@
-/* Fora da página por enquanto (pedido do mandato). Para voltar: importar e montar <Contexto /> no App, depois do <Assine />. */
+/* Arquivada: aparece só com Painel → Arquivo → "Como funciona" ligado. */
 import { useRef } from 'react'
 import { m, useScroll, useSpring, useTransform } from 'motion/react'
 import { LETREIRO } from '../data/conteudo'
@@ -38,7 +38,7 @@ export function Contexto() {
   const linha = useSpring(useTransform(scrollYProgress, [0, 1], [0, 1]), { stiffness: 90, damping: 24 })
 
   return (
-    <section id="contexto" className="arco relative z-20 overflow-hidden bg-papel pb-24 pt-24 sm:pb-32 sm:pt-32">
+    <section id="contexto" className="arco relative z-[12] overflow-hidden bg-papel pb-24 pt-24 sm:pb-32 sm:pt-32">
       <div className="container">
         <div className="flex flex-wrap items-end justify-between gap-8">
           <div>

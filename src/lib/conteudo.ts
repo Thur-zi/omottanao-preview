@@ -51,6 +51,10 @@ function aplicar(r: Resposta) {
   CONFIG.mostrarContagem = c.mostrar_contagem === '1'
   CONFIG.mostrarInfoEstado = c.mostrar_info_estado === '1'
   CONFIG.mostrarVotometro = c.mostrar_votometro === '1'
+  CONFIG.mostrarComoFunciona = c.mostrar_como_funciona === '1'
+  CONFIG.mostrarAviso = c.mostrar_aviso === '1'
+  if (c.aviso_texto) CONFIG.avisoTexto = c.aviso_texto
+  CONFIG.mostrarBotoesWhatsapp = c.mostrar_botoes_whatsapp === '1'
   versao++
   ouvintes.forEach((f) => f())
 }
