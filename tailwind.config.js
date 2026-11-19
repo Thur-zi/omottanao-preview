@@ -40,6 +40,8 @@ export default {
         respira: { '0%,100%': { transform: 'scale(1)', opacity: '0.55' }, '50%': { transform: 'scale(1.35)', opacity: '0' } },
         desce: { '0%': { transform: 'translateY(-30%)', opacity: '0' }, '40%': { opacity: '1' }, '100%': { transform: 'translateY(60%)', opacity: '0' } },
         quica: { '0%,100%': { transform: 'translateY(-3px)' }, '50%': { transform: 'translateY(4px)' } },
+        'cutuca-d': { '0%,100%': { transform: 'translateX(-4px)', opacity: '0.7' }, '50%': { transform: 'translateX(6px)', opacity: '1' } },
+        'cutuca-e': { '0%,100%': { transform: 'translateX(4px)', opacity: '0.7' }, '50%': { transform: 'translateX(-6px)', opacity: '1' } },
         grao: {
           '0%,100%': { transform: 'translate(0,0)' },
           '20%': { transform: 'translate(-3%,2%)' },
@@ -53,6 +55,8 @@ export default {
         respira: 'respira 2.4s ease-out infinite',
         desce: 'desce 1.8s cubic-bezier(.6,0,.4,1) infinite',
         quica: 'quica 1.2s cubic-bezier(.45,0,.55,1) infinite',
+        'cutuca-d': 'cutuca-d 1s cubic-bezier(.45,0,.55,1) infinite',
+        'cutuca-e': 'cutuca-e 1s cubic-bezier(.45,0,.55,1) infinite',
         grao: 'grao 0.9s steps(4) infinite',
       },
     },
