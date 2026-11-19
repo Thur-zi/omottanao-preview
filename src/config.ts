@@ -20,6 +20,8 @@ export const CONFIG = {
   site: 'omottanao.com.br',
   /** Mostra os selos "dado de exemplo" enquanto houver dados fictícios. */
   previa: true,
+  /** Contagem regressiva + lista "o que você recebe" no abaixo-assinado (arquivada; liga no painel). */
+  mostrarContagem: false,
   responsavel: '[NOME / CNPJ DO RESPONSÁVEL]',
   encarregado: { nome: '[NOME DO ENCARREGADO]', email: '[EMAIL]' },
   /** Foto do candidato; o painel pode trocar. Padrão: foto oficial da Câmara (CC BY 3.0). */

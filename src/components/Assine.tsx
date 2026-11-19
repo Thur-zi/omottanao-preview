@@ -269,27 +269,32 @@ export function Assine() {
             </p>
           </Surge>
 
-          <Surge atraso={0.25} className="mt-9">
-            <Contagem />
-          </Surge>
-
-          <ul className="mt-10 space-y-4">
-            {[
-              [MapPin, 'Quem é o deputado do seu estado'],
-              [Megaphone, 'Como cobrá-lo pelos canais oficiais'],
-              [Bell, 'As atualizações da disputa, em primeira mão'],
-            ].map(([Icone, txt], i) => {
-              const I = Icone as typeof MapPin
-              return (
-                <Surge as="li" key={i} atraso={0.3 + i * 0.07} className="flex items-center gap-4">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/[0.07] text-azul-claro ring-1 ring-white/10">
-                    <I size={20} />
-                  </span>
-                  <span className="text-[16px] font-semibold text-white/85">{txt as string}</span>
-                </Surge>
-              )
-            })}
-          </ul>
+          {/* arquivado: liga em Painel → Configurações → "Mostrar contagem regressiva" */}
+          {CONFIG.mostrarContagem && (
+            <>
+            <Surge atraso={0.25} className="mt-9">
+              <Contagem />
+            </Surge>
+  
+            <ul className="mt-10 space-y-4">
+              {[
+                [MapPin, 'Quem é o deputado do seu estado'],
+                [Megaphone, 'Como cobrá-lo pelos canais oficiais'],
+                [Bell, 'As atualizações da disputa, em primeira mão'],
+              ].map(([Icone, txt], i) => {
+                const I = Icone as typeof MapPin
+                return (
+                  <Surge as="li" key={i} atraso={0.3 + i * 0.07} className="flex items-center gap-4">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/[0.07] text-azul-claro ring-1 ring-white/10">
+                      <I size={20} />
+                    </span>
+                    <span className="text-[16px] font-semibold text-white/85">{txt as string}</span>
+                  </Surge>
+                )
+              })}
+            </ul>
+            </>
+          )}
         </div>
 
         {/* ---------- a cédula ---------- */}
