@@ -172,6 +172,10 @@ export class CenaCarimbo {
 
   /** deslocamento vertical da entrada em cena (em larguras do carimbo) */
   private entrada = 4
+  private preparo = 0
+  private preparoAlvo = 0
+  /** instante (relógio) em que termina a entrada; o ensaio começa depois disso */
+  private tEntrou = Infinity
 
   /**
    * Pairando à frente da foto, um pouco acima da testa. As coordenadas são corrigidas pela
@@ -181,19 +185,34 @@ export class CenaCarimbo {
     const L = this.largura
     this.mouse.sx = lerp(this.mouse.sx, this.mouse.x, 0.06)
     this.mouse.sy = lerp(this.mouse.sy, this.mouse.y, 0.06)
+    this.preparo = lerp(this.preparo, this.preparoAlvo, 0.12)
+    // ensaio: de tempos em tempos ele "ameaça" descer até a testa e volta (mostra o que vai acontecer)
+    const fase = t - this.tEntrou
+    const ciclo = fase > 0 ? fase % 3.6 : 0
+    const ensaio = ciclo > 2.5 ? Math.sin((Math.PI * (ciclo - 2.5)) / 1.1) ** 2 : 0
+    const d = Math.max(ensaio * 0.42, this.preparo * 0.32)
     // pairando ao lado da cabeça (o rosto fica livre); no celular, mais perto do centro
-    const z = 0.55 * L
+    const z = lerp(0.55 * L, 0.2 * L, d)
     const k = (DIST - z) / DIST
-    const lateral = this.w / this.h < 0.8 ? 0.42 : 0.98
+    // celular: acima e à direita da testa, deixando o alvo à mostra
+    const estreito = this.w / this.h < 0.8
+    const lateral = estreito ? 0.36 : 0.98
+    const altura = estreito ? 0.34 : -0.05
     const bob = Math.sin(t * 1.6) * 0.035 * L
-    const tela = {
+    const pairando = {
       x: this.alvo.x + (lateral + this.mouse.sx * 0.08) * L,
-      y: this.alvo.y + (-0.05 + this.entrada) * L + bob - this.mouse.sy * 0.05 * L,
+      y: this.alvo.y + (altura + this.entrada) * L + bob - this.mouse.sy * 0.05 * L,
     }
+    const tela = { x: lerp(pairando.x, this.alvo.x, d), y: lerp(pairando.y, this.alvo.y + 0.12 * L, d) }
     this.externo.position.set(tela.x * k, tela.y * k, z)
-    this.externo.rotation.z = this.giro - 0.32 + Math.sin(t * 0.9) * 0.05 + this.mouse.sx * 0.08
-    this.interno.rotation.x = Math.PI / 2 - (0.92 + Math.sin(t * 1.3) * 0.04 + this.mouse.sy * 0.12)
-    this.interno.rotation.y = Math.sin(t * 0.7) * 0.14 + this.mouse.sx * 0.25
+    this.externo.rotation.z = lerp(this.giro - 0.32 + Math.sin(t * 0.9) * 0.05 + this.mouse.sx * 0.08, this.giro, d)
+    this.interno.rotation.x = lerp(Math.PI / 2 - (0.92 + Math.sin(t * 1.3) * 0.04 + this.mouse.sy * 0.12), Math.PI / 2 - 0.25, d)
+    this.interno.rotation.y = lerp(Math.sin(t * 0.7) * 0.14 + this.mouse.sx * 0.25, 0, d)
+  }
+
+  /** O botão em foco/hover: o carimbo se inclina para a testa (causa e efeito). */
+  preparar(v: boolean) {
+    this.preparoAlvo = v ? 1 : 0
   }
 
   /** Entra em cena descendo e fica pairando sobre a testa. */
@@ -202,6 +221,7 @@ export class CenaCarimbo {
     this.externo.visible = true
     this.entrada = 4
     this.iniciarLoop()
+    this.tEntrou = this.relogio.getElapsedTime() + 1.8
     await tween(1.3, (k) => {
       this.entrada = lerp(4, 0, k)
     }, ease.outBack)

@@ -209,7 +209,8 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
       id="inicio"
       aria-label="O Motta não"
       onPointerMove={apontar}
-      className="grao relative isolate h-[100svh] min-h-[600px] overflow-hidden bg-vermelho text-white"
+      onClick={() => fase === 'espera' && golpe()}
+      className={`grao relative isolate h-[100svh] min-h-[600px] overflow-hidden bg-vermelho text-white ${fase === 'espera' ? 'cursor-pointer' : ''}`}
     >
       {/* luz e vinheta */}
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_50%_at_50%_38%,rgba(255,96,72,0.38),transparent_70%),radial-gradient(130%_95%_at_50%_45%,transparent_52%,rgba(28,3,3,0.72))]" />
@@ -244,6 +245,29 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 2.4, ease: EASE, delay: 0.2 }}
             />
+            {/* alvo: onde o carimbo vai bater (some no golpe) */}
+            <AnimatePresence>
+              {fase === 'espera' && !reduz && (
+                <m.div
+                  aria-hidden
+                  className="pointer-events-none absolute"
+                  style={{
+                    left: `${(ALVO.x - ALVO.largura / 2) * 100}%`,
+                    top: `${(ALVO.y - (ALVO.largura * PROPORCAO_MARCA) / 2) * 100}%`,
+                    width: `${ALVO.largura * 100}%`,
+                    rotate: ALVO.giro,
+                  }}
+                  initial={{ opacity: 0, scale: 1.15 }}
+                  animate={{ opacity: [0.35, 0.9, 0.35], scale: 1 }}
+                  exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                  transition={{ opacity: { duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: 2.6 }, scale: { duration: 0.6, delay: 2.6, ease: EASE } }}
+                >
+                  <div className="relative rounded-[10px] outline-dashed outline-[3px] outline-offset-[6px] outline-white/80">
+                    <Impressao className="w-full opacity-25" id="tinta-mira" />
+                  </div>
+                </m.div>
+              )}
+            </AnimatePresence>
             <AnimatePresence>
               {marcado && (
                 <m.div
@@ -313,11 +337,22 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.35 } }}
             transition={{ duration: 1, ease: EASE, delay: 1.9 }}
           >
-            <button ref={cta} type="button" onClick={golpe} className="group relative grid place-items-center rounded-full transition-transform duration-300 ease-out">
+            <button
+              ref={cta}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                golpe()
+              }}
+              onPointerEnter={() => cena.current?.preparar(true)}
+              onPointerLeave={() => cena.current?.preparar(false)}
+              onFocus={() => cena.current?.preparar(true)}
+              onBlur={() => cena.current?.preparar(false)}
+              className="group relative grid place-items-center rounded-full transition-transform duration-300 ease-out">
               <span aria-hidden className="absolute inset-0 animate-respira rounded-full border-2 border-white/80" />
               <span aria-hidden className="absolute inset-0 animate-respira rounded-full border border-white/60 [animation-delay:1.2s]" />
               <span className="btn-azul h-[66px] px-10 text-[20px] shadow-[0_24px_60px_-18px_rgba(4,11,38,0.9)] sm:h-[72px] sm:px-12 sm:text-[22px]">
-                Diga não ao Motta
+                Carimbe o NÃO
                 <Stamp size={22} strokeWidth={2.4} aria-hidden className="transition-transform duration-300 group-hover:translate-y-1" />
               </span>
             </button>
