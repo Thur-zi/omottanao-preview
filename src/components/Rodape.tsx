@@ -21,7 +21,7 @@ export function Rodape() {
             <TituloRevela texto="Todo NÃO conta." destaque={['NÃO']} classeDestaque="bg-azul px-[0.1em] text-white" />
           </h2>
           <p className="mt-6 max-w-[40ch] text-lg leading-relaxed text-white/80">
-            O voto é secreto, mas o seu deputado vai saber o que a base pensa. Assine e espalhe.
+            O voto é secreto. A sua cobrança, não. Peça coerência ao deputado em quem você votou.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <button type="button" onClick={() => rolarPara('assine')} className="btn-azul h-16 px-9 text-[19px]" data-rastreio="cta:fechamento">
