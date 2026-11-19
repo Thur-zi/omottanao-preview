@@ -240,8 +240,8 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
               {...{ fetchpriority: 'high' }}
               draggable={false}
               className="h-full w-full select-none object-cover [mask-image:radial-gradient(closest-side,#000_72%,transparent_100%)]"
-              initial={reduz || aberto ? false : { opacity: 0, scale: 1.14, filter: 'brightness(0.25) blur(12px)' }}
-              animate={{ opacity: 1, scale: 1, filter: 'brightness(1) blur(0px)' }}
+              initial={reduz || aberto ? false : { opacity: 0, scale: 1.14 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 2.4, ease: EASE, delay: 0.2 }}
             />
             <AnimatePresence>
@@ -310,7 +310,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
             className="absolute inset-x-0 bottom-[calc(8svh+26px)] z-30 flex justify-center"
             initial={reduz ? false : { opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, filter: 'blur(6px)', transition: { duration: 0.35 } }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.35 } }}
             transition={{ duration: 1, ease: EASE, delay: 1.9 }}
           >
             <button ref={cta} type="button" onClick={golpe} className="group relative grid place-items-center rounded-full transition-transform duration-300 ease-out">

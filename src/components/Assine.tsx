@@ -319,7 +319,7 @@ export function Assine() {
                   {/* serrilhado de cédula */}
                   <span aria-hidden className="absolute inset-x-6 -top-[7px] h-[14px] [background:radial-gradient(circle,#040B26_5px,transparent_5.5px)_0_0/22px_14px_repeat-x]" />
                   {/* papel */}
-                  <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[26px] opacity-[0.35] mix-blend-multiply [background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .5  0 0 0 0 .45  0 0 0 0 .35  0 0 0 .12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E&quot;)]" />
+                  <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[26px] opacity-[0.3] [background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .5  0 0 0 0 .45  0 0 0 0 .35  0 0 0 .12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E&quot;)]" />
 
                   <div className="relative flex items-start justify-between gap-4">
                     <div>

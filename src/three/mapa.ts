@@ -113,6 +113,8 @@ export class CenaMapa {
   /** Direção da câmera (y para trás, z para cima). */
   incl = { y: 10.5, z: 12.5 }
   private medidas = new Map<string, { w: number; h: number }>()
+  private desvios = new Map<string, { x: number; y: number }>()
+  private arranjoSujo = true
 
   aoPassar?: (uf: string | null, x: number, y: number) => void
   aoClicar?: (uf: string) => void
@@ -247,6 +249,7 @@ export class CenaMapa {
 
     document.fonts?.ready.then(() => {
       this.medidas.clear()
+      this.arranjoSujo = true
       this.sujo = true
     })
     this.ro = new ResizeObserver(() => this.redimensionar())
@@ -268,6 +271,7 @@ export class CenaMapa {
     this.h = el.clientHeight || 1
     this.renderer.setSize(this.w, this.h, false)
     this.medidas.clear()
+    this.arranjoSujo = true
     this.camera.aspect = this.w / this.h
     this.camera.clearViewOffset()
     this.camera.updateProjectionMatrix()
@@ -399,16 +403,40 @@ export class CenaMapa {
   }
 
   /**
-   * Posiciona os rótulos e afasta os que se sobrepõem (DF/GO, PR/SC, o Nordeste no celular).
-   * O estado menor cede espaço, mantendo a ordem real (norte/sul, leste/oeste).
+   * Posiciona os rótulos no estado, aplicando o arranjo anti-sobreposição já calculado.
    */
   private atualizarRotulos() {
     if (!this.rotulos.size) return
     const mostrar = !this.voando && !this.selecionado
+    // o arranjo (quem cede espaço para quem) é calculado uma vez, com o mapa parado,
+    // e reaproveitado: estado que sobe no hover não empurra mais os vizinhos
+    if (this.arranjoSujo) this.arranjar()
+    for (const [uf, el] of this.rotulos) {
+      const e = this.estados.get(uf)!
+      const d = this.desvios.get(uf) ?? { x: 0, y: 0 }
+      const m = this.medidas.get(uf) ?? { w: 0, h: 0 }
+      // sigla fixa: não acompanha o estado que sobe no destaque (não esbarra nas vizinhas)
+      const p = e.centro.clone().setZ(e.altura + 0.05).project(this.camera)
+      const x = Math.min(this.w - m.w / 2 - 3, Math.max(m.w / 2 + 3, ((p.x + 1) / 2) * this.w + d.x))
+      const y = Math.min(this.h - m.h / 2 - 3, Math.max(m.h / 2 + 3, ((1 - p.y) / 2) * this.h + d.y))
+      el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`
+      el.style.opacity = mostrar ? '1' : '0'
+      el.style.pointerEvents = mostrar ? 'auto' : 'none'
+    }
+  }
+
+  /** Afasta rótulos sobrepostos (DF/GO, PR/SC, Nordeste); o menor cede, mantendo a ordem real. */
+  private arranjar() {
+    this.arranjoSujo = false
+    const pos = this.camera.position.clone()
+    const q = this.camera.quaternion.clone()
+    this.camera.position.copy(this.posBase)
+    this.camera.lookAt(this.olhar)
+    this.camera.updateMatrixWorld()
     const itens: { uf: string; ax: number; ay: number; x: number; y: number; w: number; h: number; peso: number }[] = []
     for (const [uf, el] of this.rotulos) {
       const e = this.estados.get(uf)!
-      const p = e.centro.clone().setZ(e.altura + e.alvoZ + 0.05).project(this.camera)
+      const p = e.centro.clone().setZ(e.altura + 0.05).project(this.camera)
       const ax = ((p.x + 1) / 2) * this.w
       const ay = ((1 - p.y) / 2) * this.h
       let m = this.medidas.get(uf)
@@ -418,8 +446,7 @@ export class CenaMapa {
       }
       itens.push({ uf, ax, ay, x: ax, y: ay, w: m.w + 12, h: m.h + 7, peso: 1 / (e.tamanho + 0.25) })
     }
-    // relaxamento simples: empurra pares sobrepostos pelo eixo de menor sobreposição
-    for (let volta = 0; volta < 30; volta++) {
+    for (let volta = 0; volta < 40; volta++) {
       let mexeu = false
       for (let i = 0; i < itens.length; i++) {
         for (let j = i + 1; j < itens.length; j++) {
@@ -431,15 +458,14 @@ export class CenaMapa {
           const oy = (a.h + b.h) / 2 - Math.abs(dy)
           if (ox <= 0 || oy <= 0) continue
           mexeu = true
-          if (a.peso + b.peso === 0) continue
           const pa = a.peso / (a.peso + b.peso)
           const pb = 1 - pa
           if (oy <= ox) {
-            const sinal = b.ay !== a.ay ? Math.sign(b.ay - a.ay) : dy !== 0 ? Math.sign(dy) : 1 // mantém a ordem real (PR acima de SC)
+            const sinal = b.ay !== a.ay ? Math.sign(b.ay - a.ay) : 1 // mantém a ordem real (RN acima de PB)
             a.y -= sinal * oy * pa
             b.y += sinal * oy * pb
           } else {
-            const sinal = b.ax !== a.ax ? Math.sign(b.ax - a.ax) : dx !== 0 ? Math.sign(dx) : 1
+            const sinal = b.ax !== a.ax ? Math.sign(b.ax - a.ax) : 1
             a.x -= sinal * ox * pa
             b.x += sinal * ox * pb
           }
@@ -447,14 +473,11 @@ export class CenaMapa {
       }
       if (!mexeu) break
     }
-    for (const it of itens) {
-      const el = this.rotulos.get(it.uf)!
-      const x = Math.min(this.w - it.w / 2, Math.max(it.w / 2, it.x))
-      const y = Math.min(this.h - it.h / 2, Math.max(it.h / 2, it.y))
-      el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`
-      el.style.opacity = mostrar ? '1' : '0'
-      el.style.pointerEvents = mostrar ? 'auto' : 'none'
-    }
+    this.desvios.clear()
+    for (const it of itens) this.desvios.set(it.uf, { x: it.x - it.ax, y: it.y - it.ay })
+    this.camera.position.copy(pos)
+    this.camera.quaternion.copy(q)
+    this.camera.updateMatrixWorld()
   }
 
   /** Voa até o estado atravessando as nuvens. */
