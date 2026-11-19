@@ -251,7 +251,7 @@ export function Assine() {
             <span className="rounded-full bg-white/10 px-3 py-1 font-sans text-[11px] font-bold text-white/70">Leva 30 segundos</span>
           </Surge>
           <h2 className="titulo mt-6">
-            <TituloRevela texto="Seu nome no NÃO." destaque={['NÃO.']} classeDestaque="text-azul-vivo" />
+            <TituloRevela texto="Seu voto merece respeito." destaque={['respeito.']} classeDestaque="text-azul-vivo" />
           </h2>
           <Surge atraso={0.15}>
             <p className="mt-6 max-w-[42ch] text-lg leading-relaxed text-white/70">
