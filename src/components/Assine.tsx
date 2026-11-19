@@ -509,7 +509,7 @@ export function Assine() {
                       <h3 className="titulo-md mt-7 sm:text-5xl">Valeu, {feito.nome}.</h3>
                       <p className="mt-3 text-white/75">{NOMES_UF[feito.uf]} ganhou mais uma voz contra o Motta.</p>
                       <ol className="mt-7 space-y-3.5">
-                        {['Feito, agora é cobrar.', 'Entre no WhatsApp do Luiz para saber quem cobrar.', 'Gere seu card e cobre o seu deputado.'].map((t, i) => (
+                        {['Feito, agora é cobrar.', 'Gere seu card e cobre o seu deputado.'].map((t, i) => (
                           <li key={i} className="flex items-center gap-3.5 text-[15.5px]">
                             <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-extrabold ${i === 0 ? 'bg-white text-azul' : 'bg-white/15'}`}>
                               {i === 0 ? <Check size={16} strokeWidth={3} /> : i + 1}
