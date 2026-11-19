@@ -1,8 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, m } from 'motion/react'
-import { Check, Lock, Stamp } from 'lucide-react'
-import { NOMES_UF, UFS, type UF } from '../data/votometro'
-import { TEXTO_CONSENTIMENTO, enviarLead, mascaraWhatsapp, whatsappValido } from '../lib/cadastro'
+/**
+ * Assine o NÃO — 2ª seção. Os campos são poucos (nome, WhatsApp, UF, LGPD);
+ * o trabalho é visual: o formulário é uma "cédula do NÃO" que recebe o carimbo e vira.
+ */
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, animate, m, useReducedMotion } from 'motion/react'
+import { Bell, Check, Lock, MapPin, Megaphone, Send, Stamp } from 'lucide-react'
+import { CONFIG } from '../config'
+import { NOMES_UF, TOTAIS, UFS, resumo, type UF } from '../data/votometro'
+import { TEXTO_CONSENTIMENTO, carregarMunicipios, enviarLead, mascaraWhatsapp, whatsappValido } from '../lib/cadastro'
+import { Combobox, type Opcao } from './Combobox'
+import { useContagem } from '../lib/contagem'
 import { definirUF, useUF } from '../lib/estado'
 import { EASE, Surge, TituloRevela, rolarPara } from '../lib/movimento'
 import { linkWhatsapp, rastrear } from '../lib/rastreio'
@@ -10,197 +17,514 @@ import { IconeWhatsapp } from './Icones'
 import { Impressao } from './Marca'
 
 const BASE = import.meta.env.BASE_URL
-type Erros = Partial<Record<'nome' | 'whatsapp' | 'uf' | 'lgpd', string>>
+type Erros = Partial<Record<'nome' | 'sobrenome' | 'whatsapp' | 'uf' | 'cidade' | 'lgpd', string>>
+const OPCOES_UF: Opcao[] = UFS.map((u) => ({ valor: u, rotulo: NOMES_UF[u], detalhe: u }))
+
+/* ---------- contagem regressiva com dígitos que rolam ---------- */
+function Digito({ valor, rotulo }: { valor: number; rotulo: string }) {
+  const txt = String(valor).padStart(2, '0')
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative flex h-[68px] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] sm:h-[84px]">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <m.span
+            key={txt}
+            className="num block text-[2.6rem] leading-none text-white sm:text-[3.3rem]"
+            initial={{ y: '-90%', opacity: 0 }}
+            animate={{ y: '0%', opacity: 1 }}
+            exit={{ y: '90%', opacity: 0 }}
+            transition={{ duration: 0.45, ease: EASE }}
+          >
+            {txt}
+          </m.span>
+        </AnimatePresence>
+        <span className="absolute inset-x-0 top-1/2 h-px bg-azul-fundo/60" />
+      </div>
+      <span className="mt-2 font-sans text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/45">{rotulo}</span>
+    </div>
+  )
+}
+
+function Contagem() {
+  const t = useContagem()
+  return (
+    <div>
+      <p className="mb-3 font-sans text-[12px] font-bold uppercase tracking-[0.18em] text-azul-claro">Até a votação na Câmara</p>
+      <div className="grid max-w-[420px] grid-cols-4 gap-2.5">
+        <Digito valor={t.dias} rotulo="dias" />
+        <Digito valor={t.horas} rotulo="horas" />
+        <Digito valor={t.minutos} rotulo="min" />
+        <Digito valor={t.segundos} rotulo="seg" />
+      </div>
+    </div>
+  )
+}
+
+/* ---------- campo em linha de cédula ---------- */
+function Linha({
+  id,
+  rotulo,
+  ok,
+  erro,
+  children,
+}: {
+  id: string
+  rotulo: string
+  ok: boolean
+  erro?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="relative">
+      <label htmlFor={id} className="mb-1.5 flex items-center justify-between font-sans text-[10.5px] font-extrabold uppercase tracking-[0.2em] text-azul-tinta/45">
+        {rotulo}
+        <AnimatePresence>
+          {ok && (
+            <m.span
+              className="grid h-5 w-5 place-items-center rounded-full bg-azul text-white"
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+            >
+              <Check size={12} strokeWidth={3.5} />
+            </m.span>
+          )}
+        </AnimatePresence>
+      </label>
+      <div className={`relative flex items-center border-b-2 transition-colors ${erro ? 'border-vermelho' : ok ? 'border-azul' : 'border-azul-tinta/15 focus-within:border-azul'}`}>
+        {children}
+      </div>
+      <AnimatePresence>
+        {erro && (
+          <m.p id={`e-${id}`} role="alert" className="mt-1.5 text-[12.5px] font-semibold text-vermelho" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            {erro}
+          </m.p>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+const entrada = 'h-12 w-full bg-transparent font-titulo text-[24px] font-bold text-azul-tinta outline-none placeholder:font-sans placeholder:text-[16px] placeholder:font-medium placeholder:text-azul-tinta/25 [font-stretch:85%]'
 
 export function Assine() {
+  const reduz = useReducedMotion()
   const ufGlobal = useUF()
   const [nome, setNome] = useState('')
+  const [sobrenome, setSobrenome] = useState('')
   const [wa, setWa] = useState('')
   const [uf, setUf] = useState<UF | ''>(ufGlobal ?? '')
+  const [cidade, setCidade] = useState('')
+  const [municipios, setMunicipios] = useState<Opcao[]>([])
+  const [carregandoCidades, setCarregandoCidades] = useState(false)
   const [lgpd, setLgpd] = useState(false)
   const [erros, setErros] = useState<Erros>({})
   const [tentou, setTentou] = useState(false)
   const [enviando, setEnviando] = useState(false)
+  const [carimbada, setCarimbada] = useState(false)
+  const [virada, setVirada] = useState(false)
   const [feito, setFeito] = useState<null | { nome: string; uf: UF }>(null)
   const tocouUf = useRef(false)
-  const done = useRef<HTMLDivElement>(null)
+  const cedula = useRef<HTMLDivElement>(null)
+  const inclina = useRef<HTMLDivElement>(null)
+  const verso = useRef<HTMLDivElement>(null)
+  const serie = useMemo(() => String(Math.floor(100000 + Math.random() * 899999)).replace(/(\d{3})(\d{3})/, '$1.$2'), [])
 
   useEffect(() => {
     if (ufGlobal && !tocouUf.current) setUf(ufGlobal)
   }, [ufGlobal])
 
+  // trocou o estado: carrega as cidades dele e limpa a cidade escolhida
+  useEffect(() => {
+    setCidade('')
+    setMunicipios([])
+    if (!uf) return
+    let vivo = true
+    setCarregandoCidades(true)
+    carregarMunicipios(uf)
+      .then((l) => vivo && setMunicipios(l.map(([cod, n]) => ({ valor: String(cod), rotulo: n }))))
+      .catch(() => vivo && setMunicipios([]))
+      .finally(() => vivo && setCarregandoCidades(false))
+    return () => {
+      vivo = false
+    }
+  }, [uf])
+
+  const ok = {
+    nome: nome.trim().length >= 2,
+    sobrenome: sobrenome.trim().length >= 2,
+    whatsapp: whatsappValido(wa),
+    uf: !!uf,
+    cidade: !!cidade,
+    lgpd,
+  }
+  const progresso = Object.values(ok).filter(Boolean).length / 6
+
   const validar = () => {
     const e: Erros = {}
-    if (nome.trim().length < 2) e.nome = 'Digite seu nome.'
-    if (!whatsappValido(wa)) e.whatsapp = 'WhatsApp com DDD, ex.: (11) 91234-5678.'
-    if (!uf) e.uf = 'Escolha o estado.'
-    if (!lgpd) e.lgpd = 'Para receber no WhatsApp, marque a autorização.'
+    if (!ok.nome) e.nome = 'Digite seu primeiro nome.'
+    if (!ok.sobrenome) e.sobrenome = 'Digite seu sobrenome.'
+    if (!ok.whatsapp) e.whatsapp = 'WhatsApp com DDD, ex.: (11) 91234-5678.'
+    if (!ok.uf) e.uf = 'Escolha o estado.'
+    else if (!ok.cidade) e.cidade = 'Escolha a cidade.'
+    if (!ok.lgpd) e.lgpd = 'Para receber no WhatsApp, marque a autorização.'
     setErros(e)
     return e
   }
   useEffect(() => {
     if (tentou) validar()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nome, wa, uf, lgpd])
+  }, [nome, sobrenome, wa, uf, cidade, lgpd])
 
   async function enviar(ev: React.FormEvent) {
     ev.preventDefault()
     setTentou(true)
     const e = validar()
     if (Object.keys(e).length) {
+      if (cedula.current && !reduz) animate(cedula.current, { x: [0, -10, 9, -6, 4, 0] }, { duration: 0.4 })
       document.getElementById(`f-${Object.keys(e)[0]}`)?.focus()
       return
     }
     setEnviando(true)
-    const r = await enviarLead({ nome, whatsapp: wa, uf: uf as UF })
+    const nomeCidade = municipios.find((o) => o.valor === cidade)?.rotulo ?? ''
+    const r = await enviarLead({ nome, sobrenome, whatsapp: wa, uf: uf as UF, cidade: { codigo_ibge: Number(cidade), nome: nomeCidade } })
     setEnviando(false)
-    // falha de rede nunca bloqueia: a pessoa segue para o WhatsApp
     rastrear('lead', { uf, ok: r.ok })
     definirUF(uf as UF)
     setFeito({ nome: nome.trim().split(' ')[0], uf: uf as UF })
-    setTimeout(() => done.current?.focus(), 400)
+    // o carimbo bate na cédula…
+    setCarimbada(true)
+    navigator.vibrate?.(35)
+    if (cedula.current && !reduz) animate(cedula.current, { y: [0, 6, -2, 0], scale: [1, 0.985, 1] }, { duration: 0.35, delay: 0.32 })
+    // …e ela vira
+    setTimeout(() => setVirada(true), reduz ? 200 : 1500)
+    setTimeout(() => verso.current?.focus(), reduz ? 300 : 2300)
   }
 
-  const campo = (id: keyof Erros) => ({ id: `f-${id}`, 'aria-invalid': !!erros[id], 'aria-describedby': erros[id] ? `e-${id}` : undefined })
-  const Erro = ({ id }: { id: keyof Erros }) => (
-    <AnimatePresence>
-      {erros[id] && (
-        <m.p id={`e-${id}`} role="alert" className="mt-2 text-[13px] font-semibold text-vermelho" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-          {erros[id]}
-        </m.p>
-      )}
-    </AnimatePresence>
-  )
+  const inclinar = (e: React.PointerEvent) => {
+    const el = inclina.current
+    if (!el || e.pointerType === 'touch' || reduz) return
+    const r = el.getBoundingClientRect()
+    const x = (e.clientX - r.left) / r.width - 0.5
+    const y = (e.clientY - r.top) / r.height - 0.5
+    el.style.transform = `rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`
+  }
+  const soltar = () => inclina.current && (inclina.current.style.transform = '')
+
+  const infoUf = uf ? resumo(uf) : null
 
   return (
-    <section id="assine" className="arco z-[60] overflow-hidden bg-white pb-28 pt-24 sm:pb-36 sm:pt-32">
-      <div className="container grid gap-16 lg:grid-cols-[1fr_1.05fr] lg:gap-24">
-        <div className="relative">
-          <Surge>
-            <span className="rotulo text-azul">Assine o não</span>
+    <section id="assine" className="arco relative z-10 overflow-hidden bg-azul-fundo pb-24 pt-24 text-white sm:pb-32 sm:pt-32">
+      {/* fundo: brilho, grade e palavra gigante */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -right-[20%] top-[10%] h-[70vw] w-[70vw] rounded-full bg-azul/25 blur-[120px]" />
+        <div className="absolute -left-[25%] bottom-0 h-[50vw] w-[50vw] rounded-full bg-azul-vivo/10 blur-[110px]" />
+        <div className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(80%_70%_at_60%_40%,#000,transparent)]" />
+        <div className="display contorno absolute -bottom-[6vw] right-[-2vw] select-none text-[30vw] leading-none text-white/[0.06]">NÃO</div>
+      </div>
+
+      <div className="container relative grid items-start gap-16 lg:grid-cols-[1fr_minmax(0,560px)] lg:gap-20">
+        {/* ---------- lado do argumento ---------- */}
+        <div className="lg:sticky lg:top-28">
+          <Surge className="flex flex-wrap items-center gap-3">
+            <span className="rotulo text-azul-claro">Assine o não</span>
+            <span className="rounded-full bg-white/10 px-3 py-1 font-sans text-[11px] font-bold text-white/70">Leva 30 segundos</span>
           </Surge>
-          <h2 className="titulo mt-5 text-azul-tinta">
-            <TituloRevela texto="Assine o NÃO." destaque={['NÃO.']} classeDestaque="text-azul" />
+          <h2 className="titulo mt-6">
+            <TituloRevela texto="Seu nome no NÃO." destaque={['NÃO.']} classeDestaque="text-azul-vivo" />
           </h2>
           <Surge atraso={0.15}>
-            <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-azul-tinta/65">
-              Deixe seu nome e WhatsApp. Você recebe quem é o deputado do seu estado, como cobrá-lo pelos canais oficiais e as atualizações da disputa.
+            <p className="mt-6 max-w-[42ch] text-lg leading-relaxed text-white/70">
+              Assine e receba no WhatsApp quem é o deputado do seu estado e como cobrá-lo. Cada NÃO conta antes do voto secreto.
             </p>
           </Surge>
-          <Surge atraso={0.25} className="relative mt-12 hidden aspect-square max-w-[360px] lg:block">
-            <img src={`${BASE}motta-760.webp`} alt="" aria-hidden className="h-full w-full rounded-full object-cover [mask-image:radial-gradient(closest-side,#000_70%,transparent)]" loading="lazy" />
-            <Impressao className="absolute left-[24%] top-[13.5%] w-[56%] rotate-[12deg]" id="tinta-assine" />
+
+          <Surge atraso={0.2} className="mt-9 flex max-w-[460px] items-start gap-3.5 rounded-2xl border border-azul-vivo/30 bg-azul/15 p-4">
+            <span className="relative mt-1.5 flex h-2.5 w-2.5 shrink-0">
+              <span className="absolute inset-0 animate-ping rounded-full bg-azul-vivo opacity-75" />
+              <span className="relative h-2.5 w-2.5 rounded-full bg-azul-vivo" />
+            </span>
+            <p className="text-[15px] leading-snug text-white/85">
+              <b className="text-white">Agora:</b> o PL decide nos próximos dias se apoia Motta ou lança candidato próprio.
+            </p>
           </Surge>
+
+          <Surge atraso={0.25} className="mt-9">
+            <Contagem />
+          </Surge>
+
+          <ul className="mt-10 space-y-4">
+            {[
+              [MapPin, 'Quem é o deputado do seu estado'],
+              [Megaphone, 'Como cobrá-lo pelos canais oficiais'],
+              [Bell, 'As atualizações da disputa, em primeira mão'],
+            ].map(([Icone, txt], i) => {
+              const I = Icone as typeof MapPin
+              return (
+                <Surge as="li" key={i} atraso={0.3 + i * 0.07} className="flex items-center gap-4">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/[0.07] text-azul-claro ring-1 ring-white/10">
+                    <I size={20} />
+                  </span>
+                  <span className="text-[16px] font-semibold text-white/85">{txt as string}</span>
+                </Surge>
+              )
+            })}
+          </ul>
         </div>
 
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            {!feito ? (
-              <m.form key="form" onSubmit={enviar} noValidate className="rounded-[32px] bg-papel p-6 sm:p-10" exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}>
-                <div className="space-y-5">
-                  <label className="block">
-                    <span className="mb-2 block text-[15px] font-bold">Nome</span>
-                    <input {...campo('nome')} className="campo" value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="name" maxLength={80} />
-                    <Erro id="nome" />
-                  </label>
-                  <div className="grid gap-5 sm:grid-cols-[1fr_150px]">
-                    <label className="block">
-                      <span className="mb-2 block text-[15px] font-bold">WhatsApp com DDD</span>
-                      <input
-                        {...campo('whatsapp')}
-                        className="campo"
-                        type="tel"
-                        inputMode="numeric"
-                        autoComplete="tel-national"
-                        placeholder="(00) 00000-0000"
-                        value={wa}
-                        onChange={(e) => setWa(mascaraWhatsapp(e.target.value))}
-                      />
-                      <Erro id="whatsapp" />
-                    </label>
-                    <label className="block">
-                      <span className="mb-2 block text-[15px] font-bold">Estado</span>
-                      <select
-                        {...campo('uf')}
-                        className="campo"
-                        value={uf}
-                        onChange={(e) => {
-                          tocouUf.current = true
-                          setUf(e.target.value as UF)
-                        }}
-                      >
-                        <option value="">UF</option>
-                        {UFS.map((u) => (
-                          <option key={u} value={u}>
-                            {u}
-                          </option>
-                        ))}
-                      </select>
-                      <Erro id="uf" />
-                    </label>
+        {/* ---------- a cédula ---------- */}
+        <Surge atraso={0.1} y={60}>
+          <div className="[perspective:1600px]" onPointerMove={inclinar} onPointerLeave={soltar}>
+            <div ref={inclina} className="transition-transform duration-300 ease-out [transform-style:preserve-3d]">
+              <m.div
+                ref={cedula}
+                className="grid [transform-style:preserve-3d]"
+                animate={{ rotateY: virada ? 180 : 0 }}
+                transition={{ duration: 1.1, ease: [0.7, 0, 0.2, 1] }}
+              >
+                {/* FRENTE */}
+                <form
+                  onSubmit={enviar}
+                  noValidate
+                  aria-hidden={virada}
+                  className="relative col-start-1 row-start-1 rounded-[26px] bg-[#FBFAF6] p-6 text-azul-tinta shadow-[0_60px_120px_-40px_rgba(0,0,0,0.75)] [backface-visibility:hidden] sm:p-9"
+                >
+                  {/* serrilhado de cédula */}
+                  <span aria-hidden className="absolute inset-x-6 -top-[7px] h-[14px] [background:radial-gradient(circle,#040B26_5px,transparent_5.5px)_0_0/22px_14px_repeat-x]" />
+                  {/* papel */}
+                  <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[26px] opacity-[0.35] mix-blend-multiply [background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .5  0 0 0 0 .45  0 0 0 0 .35  0 0 0 .12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E&quot;)]" />
+
+                  <div className="relative flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-sans text-[10px] font-extrabold uppercase tracking-[0.24em] text-azul-tinta/45">Presidência da Câmara · 2027</p>
+                      <p className="display mt-1.5 text-[2.6rem] text-azul-tinta sm:text-[3rem]">
+                        Cédula do <span className="bg-azul px-[0.12em] text-white">NÃO</span>
+                      </p>
+                    </div>
+                    <div className="text-right font-sans">
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-azul-tinta/40">Nº</p>
+                      <p className="font-mono text-[15px] font-bold tracking-wider text-azul">{serie}</p>
+                    </div>
                   </div>
-                  <label className="flex cursor-pointer items-start gap-3.5 pt-1 text-[13.5px] leading-relaxed text-azul-tinta/70">
-                    <input {...campo('lgpd')} type="checkbox" className="mt-0.5 h-[22px] w-[22px] shrink-0 accent-azul" checked={lgpd} onChange={(e) => setLgpd(e.target.checked)} />
-                    <span>
-                      {TEXTO_CONSENTIMENTO.replace('Política de Privacidade', '')}
-                      <a href={`${BASE}privacidade.html`} target="_blank" rel="noopener" className="font-bold text-azul underline-offset-2 hover:underline">
-                        Ver Política de Privacidade
+
+                  {/* progresso */}
+                  <div className="relative mt-6">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-azul-tinta/[0.07]">
+                      <m.div className="h-full rounded-full bg-[linear-gradient(90deg,#1F4FE0,#3D7BFF)]" animate={{ width: `${Math.max(4, progresso * 100)}%` }} transition={{ duration: 0.6, ease: EASE }} />
+                    </div>
+                    <p className="mt-2 text-[12px] font-semibold text-azul-tinta/50">
+                      {progresso === 1 ? 'Pronta para o carimbo.' : `Seu NÃO está ${Math.round(progresso * 100)}% pronto.`}
+                    </p>
+                  </div>
+
+                  <div className="relative mt-7 space-y-6">
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      <Linha id="f-nome" rotulo="Primeiro nome" ok={ok.nome} erro={erros.nome}>
+                        <input id="f-nome" className={entrada} value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="given-name" maxLength={40} placeholder="Ex.: Ana" aria-invalid={!!erros.nome} />
+                      </Linha>
+                      <Linha id="f-sobrenome" rotulo="Sobrenome" ok={ok.sobrenome} erro={erros.sobrenome}>
+                        <input id="f-sobrenome" className={entrada} value={sobrenome} onChange={(e) => setSobrenome(e.target.value)} autoComplete="family-name" maxLength={60} placeholder="Ex.: Souza" aria-invalid={!!erros.sobrenome} />
+                      </Linha>
+                    </div>
+                    <div>
+                      <Linha id="f-whatsapp" rotulo="Seu WhatsApp com DDD" ok={ok.whatsapp} erro={erros.whatsapp}>
+                        <span className="mr-2.5 shrink-0 rounded-md bg-azul-tinta/[0.06] px-2 py-1 font-sans text-[13px] font-bold text-azul-tinta/60">+55</span>
+                        <input
+                          id="f-whatsapp"
+                          className={entrada}
+                          type="tel"
+                          inputMode="numeric"
+                          autoComplete="tel-national"
+                          placeholder="(00) 00000-0000"
+                          value={wa}
+                          onChange={(e) => setWa(mascaraWhatsapp(e.target.value))}
+                          aria-invalid={!!erros.whatsapp}
+                        />
+                      </Linha>
+                    </div>
+                    <div className={`grid gap-6 ${uf ? 'sm:grid-cols-[0.9fr_1.1fr]' : ''}`}>
+                      <Linha id="f-uf" rotulo="Estado" ok={ok.uf} erro={erros.uf}>
+                        <Combobox
+                          id="f-uf"
+                          opcoes={OPCOES_UF}
+                          valor={uf}
+                          aoEscolher={(v) => {
+                            tocouUf.current = true
+                            setUf(v as UF)
+                          }}
+                          placeholder="Digite ou escolha"
+                          invalido={!!erros.uf}
+                          classeEntrada={entrada}
+                        />
+                      </Linha>
+                      {/* cidade: só aparece depois do estado */}
+                      <AnimatePresence initial={false}>
+                        {uf && (
+                          <m.div
+                            key="cidade"
+                            initial={{ opacity: 0, y: -10, filter: 'blur(6px)' }}
+                            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.45, ease: EASE }}
+                          >
+                            <Linha id="f-cidade" rotulo="Cidade" ok={ok.cidade} erro={erros.cidade}>
+                              <Combobox
+                                key={uf}
+                                id="f-cidade"
+                                opcoes={municipios}
+                                valor={cidade}
+                                aoEscolher={setCidade}
+                                placeholder={`Cidades de ${uf}`}
+                                carregando={carregandoCidades}
+                                invalido={!!erros.cidade}
+                                classeEntrada={entrada}
+                              />
+                            </Linha>
+                          </m.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <AnimatePresence>
+                      {infoUf && (
+                        <m.p
+                          className="flex items-center gap-2 rounded-xl bg-azul-gelo px-3.5 py-2.5 text-[13px] font-semibold text-azul-profundo"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                        >
+                          <MapPin size={15} className="shrink-0" />
+                          {NOMES_UF[infoUf.uf]}: {infoUf.cadeiras} deputados, {infoUf.nao} já disseram NÃO.
+                          {CONFIG.previa && TOTAIS.temExemplo && <span className="ml-auto text-[10px] uppercase tracking-wider text-azul-profundo/50">exemplo</span>}
+                        </m.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* consentimento + espaço do carimbo */}
+                  <div className="relative mt-7 grid items-center gap-5 sm:grid-cols-[1fr_190px]">
+                    <div>
+                      <label className="flex cursor-pointer items-start gap-3 text-[12.5px] leading-relaxed text-azul-tinta/65">
+                        <input id="f-lgpd" type="checkbox" className="peer sr-only" checked={lgpd} onChange={(e) => setLgpd(e.target.checked)} aria-invalid={!!erros.lgpd} />
+                        <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 transition peer-focus-visible:ring-4 peer-focus-visible:ring-azul/25 ${lgpd ? 'border-azul bg-azul text-white' : erros.lgpd ? 'border-vermelho' : 'border-azul-tinta/25'}`}>
+                          {lgpd && <Check size={15} strokeWidth={3.5} />}
+                        </span>
+                        <span>
+                          {TEXTO_CONSENTIMENTO.replace('Política de Privacidade', '')}
+                          <a href={`${BASE}privacidade.html`} target="_blank" rel="noopener" className="font-bold text-azul underline-offset-2 hover:underline">
+                            Ver política
+                          </a>
+                          .
+                        </span>
+                      </label>
+                      <AnimatePresence>
+                        {erros.lgpd && (
+                          <m.p role="alert" className="mt-1.5 text-[12.5px] font-semibold text-vermelho" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                            {erros.lgpd}
+                          </m.p>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <div className="relative grid h-[104px] place-items-center rounded-2xl border-2 border-dashed border-azul-tinta/15">
+                      <AnimatePresence>
+                        {!carimbada && (
+                          <m.span className="flex flex-col items-center gap-1 text-azul-tinta/25" exit={{ opacity: 0 }}>
+                            <Stamp size={26} />
+                            <span className="font-sans text-[9.5px] font-extrabold uppercase tracking-[0.2em]">Espaço do carimbo</span>
+                          </m.span>
+                        )}
+                      </AnimatePresence>
+                      <AnimatePresence>
+                        {carimbada && (
+                          <m.div
+                            className="absolute inset-2 grid place-items-center"
+                            initial={{ scale: 2.6, opacity: 0, rotate: -22, y: -40 }}
+                            animate={{ scale: 1, opacity: 1, rotate: -8, y: 0 }}
+                            transition={{ duration: 0.38, ease: [0.5, 0, 0.75, 0], opacity: { duration: 0.1, delay: 0.25 } }}
+                          >
+                            <Impressao className="w-full" cor="#1F4FE0" id="tinta-cedula" />
+                          </m.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={enviando || carimbada} className="btn-azul relative mt-7 h-16 w-full text-[19px] disabled:cursor-progress">
+                    {enviando ? (
+                      <>
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Registrando…
+                      </>
+                    ) : carimbada ? (
+                      <>
+                        <Check size={21} /> Carimbado
+                      </>
+                    ) : (
+                      <>
+                        <Stamp size={21} /> Carimbar meu NÃO
+                      </>
+                    )}
+                  </button>
+                  <div className="relative mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11.5px] font-semibold text-azul-tinta/45">
+                    <span className="flex items-center gap-1.5"><Lock size={13} /> Dados protegidos (LGPD)</span>
+                    <span>Sem spam</span>
+                    <span>Saia quando quiser</span>
+                  </div>
+                </form>
+
+                {/* VERSO */}
+                <div
+                  ref={verso}
+                  tabIndex={-1}
+                  aria-hidden={!virada}
+                  className="relative col-start-1 row-start-1 flex flex-col overflow-hidden rounded-[26px] bg-[linear-gradient(160deg,#1F4FE0_0%,#0E2E9A_45%,#081A52_100%)] p-7 text-white shadow-[0_60px_120px_-40px_rgba(0,0,0,0.75)] outline-none [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-10"
+                >
+                  <span aria-hidden className="display pointer-events-none absolute -right-6 -top-10 select-none text-[13rem] leading-none text-white/[0.06]">NÃO</span>
+                  {feito && (
+                    <>
+                      <m.div
+                        className="inline-block self-start -rotate-6 rounded-xl border-[5px] border-white px-4 pb-1.5 pt-2.5 font-titulo text-[2rem] font-black uppercase leading-none [font-stretch:68%]"
+                        initial={{ scale: 2.2, opacity: 0 }}
+                        animate={virada ? { scale: 1, opacity: 1 } : undefined}
+                        transition={{ type: 'spring', stiffness: 380, damping: 18, delay: 0.75 }}
+                      >
+                        NÃO registrado
+                      </m.div>
+                      <h3 className="titulo-md mt-7 sm:text-5xl">Valeu, {feito.nome}.</h3>
+                      <p className="mt-3 text-white/75">Sua cédula nº {serie} foi registrada para {NOMES_UF[feito.uf]}.</p>
+                      <ol className="mt-7 space-y-3.5">
+                        {['Seu NÃO foi registrado.', 'Entre no WhatsApp do Luiz para saber quem cobrar.', 'Gere seu card e cobre o seu deputado.'].map((t, i) => (
+                          <li key={i} className="flex items-center gap-3.5 text-[15.5px]">
+                            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-extrabold ${i === 0 ? 'bg-white text-azul' : 'bg-white/15'}`}>
+                              {i === 0 ? <Check size={16} strokeWidth={3} /> : i + 1}
+                            </span>
+                            <span className={i === 0 ? 'text-white/60 line-through decoration-white/60' : 'font-semibold'}>{t}</span>
+                          </li>
+                        ))}
+                      </ol>
+                      <a className="btn-zap mt-8 h-16 w-full text-[18px]" href={linkWhatsapp('confirmacao', feito.uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:confirmacao">
+                        <IconeWhatsapp /> Entrar no WhatsApp do Luiz
                       </a>
-                      .
-                    </span>
-                  </label>
-                  <Erro id="lgpd" />
-                </div>
-                <button type="submit" disabled={enviando} className="btn-azul mt-8 h-16 w-full text-[19px] disabled:cursor-progress disabled:opacity-80">
-                  {enviando ? (
-                    <>
-                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Registrando seu NÃO…
-                    </>
-                  ) : (
-                    <>
-                      <Stamp size={21} /> Eu digo não ao Motta
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <button type="button" onClick={() => rolarPara('recado')} className="btn-linha h-12 text-[14px] text-white">
+                          Gerar meu card
+                        </button>
+                        <a
+                          className="btn-linha h-12 text-[14px] text-white"
+                          href={`https://wa.me/?text=${encodeURIComponent(`Assinei o NÃO ao Motta. Assine também: https://${CONFIG.site}`)}`}
+                          target="_blank"
+                          rel="noopener"
+                          data-rastreio="compartilhar:confirmacao"
+                        >
+                          <Send size={16} /> Chamar amigos
+                        </a>
+                      </div>
                     </>
                   )}
-                </button>
-                <p className="mt-4 flex items-center gap-2 text-[12.5px] text-azul-tinta/50">
-                  <Lock size={14} /> Seus dados são usados só para esta mobilização. Você pode sair quando quiser.
-                </p>
-              </m.form>
-            ) : (
-              <m.div key="ok" ref={done} tabIndex={-1} className="rounded-[32px] bg-azul-fundo p-7 text-white outline-none sm:p-10" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EASE }}>
-                <m.div
-                  className="inline-block -rotate-6 rounded-xl border-[5px] border-azul-vivo px-5 pb-2 pt-3 font-titulo text-[2.2rem] font-black uppercase leading-none text-azul-vivo [font-stretch:70%]"
-                  initial={{ scale: 2.4, opacity: 0, rotate: -18 }}
-                  animate={{ scale: 1, opacity: 1, rotate: -6 }}
-                  transition={{ type: 'spring', stiffness: 380, damping: 18, delay: 0.25 }}
-                >
-                  NÃO registrado
-                </m.div>
-                <h3 className="titulo-md mt-8 sm:text-5xl">Valeu, {feito.nome}.</h3>
-                <ol className="mt-7 space-y-4">
-                  {[
-                    ['Seu NÃO foi registrado.', true],
-                    [`Entre no WhatsApp do Luiz para saber quem cobrar em ${NOMES_UF[feito.uf]}.`, false],
-                    ['Gere seu card e cobre o seu deputado.', false],
-                  ].map(([t, ok], i) => (
-                    <m.li key={i} className="flex items-center gap-4 text-[16px]" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.12 }}>
-                      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-extrabold ${ok ? 'bg-azul-vivo' : 'bg-white/10'}`}>
-                        {ok ? <Check size={16} /> : i + 1}
-                      </span>
-                      <span className={ok ? 'text-white/60 line-through decoration-azul-vivo' : 'font-semibold'}>{t as string}</span>
-                    </m.li>
-                  ))}
-                </ol>
-                <a className="btn-zap mt-9 h-16 w-full text-[18px]" href={linkWhatsapp('confirmacao', feito.uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:confirmacao">
-                  <IconeWhatsapp /> Entrar no WhatsApp do Luiz
-                </a>
-                <button type="button" onClick={() => rolarPara('recado')} className="mt-5 w-full text-center text-[15px] font-bold text-azul-claro underline-offset-4 hover:underline">
-                  Gerar meu card →
-                </button>
+                </div>
               </m.div>
-            )}
-          </AnimatePresence>
-        </div>
+            </div>
+          </div>
+        </Surge>
       </div>
     </section>
   )

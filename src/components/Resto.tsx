@@ -4,10 +4,9 @@ import { Votometro } from './Votometro'
 import { PorQueNao } from './PorQueNao'
 import { Alternativa } from './Alternativa'
 import { Recado } from './Recado'
-import { Assine } from './Assine'
 import { Rodape } from './Rodape'
 
-/** Ordem do briefing: votômetro → por que não → a alternativa → (card) → assine → rodapé. */
+/** Depois do formulário (2ª seção) e do contexto: votômetro → por que não → a alternativa → card → rodapé. */
 export default function Resto() {
   // quem chega por âncora (#votometro, #assine…) vai direto para a seção, depois que ela existe
   useEffect(() => {
@@ -20,7 +19,6 @@ export default function Resto() {
       <PorQueNao />
       <Alternativa />
       <Recado />
-      <Assine />
       <Rodape />
     </>
   )

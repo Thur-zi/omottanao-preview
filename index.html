@@ -24,6 +24,8 @@
       (function () {
         var d = document.documentElement
         try {
+          // a abertura é a porta de entrada: recarregar sempre volta ao topo
+          if (!location.hash && 'scrollRestoration' in history) history.scrollRestoration = 'manual'
           var reduz = matchMedia('(prefers-reduced-motion: reduce)').matches
           var jaViu = sessionStorage.getItem('omn:carimbado') === '1'
           d.classList.add(reduz || jaViu || location.hash ? 'sem-abertura' : 'com-abertura')

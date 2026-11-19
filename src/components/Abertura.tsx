@@ -362,7 +362,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
         {abertoAgora && (
           <m.button
             type="button"
-            onClick={() => rolarPara('contexto', 0)}
+            onClick={() => rolarPara('assine', 0)}
             className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1.5 px-6 py-2 font-sans text-[11px] font-extrabold uppercase tracking-rotulo text-white"
             initial={aberto ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}

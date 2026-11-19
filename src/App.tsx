@@ -4,6 +4,7 @@ import { Abertura } from './components/Abertura'
 import { Topo } from './components/Topo'
 import { Contexto, Letreiro } from './components/Contexto'
 import { BarraFixa } from './components/Rodape'
+import { Assine } from './components/Assine'
 
 const Resto = lazy(() => import('./components/Resto'))
 
@@ -38,6 +39,7 @@ export default function App() {
             <Letreiro />
           </div>
         </div>
+        <Assine />
         <Contexto />
         {pronto && (
           <Suspense fallback={<div className="h-[100svh] bg-azul-fundo" />}>

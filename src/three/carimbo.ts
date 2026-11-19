@@ -11,81 +11,80 @@ const FOV = 30
 const DIST = 10
 const GRAUS = Math.PI / 180
 
-function texturaEtiqueta() {
+/** Textura de madeira procedural (veios + poros), gerada uma vez em canvas. */
+function texturaMadeira(base: string, veio: string, claro: string, semente: number) {
   const c = document.createElement('canvas')
-  c.width = 512
-  c.height = 96
+  c.width = c.height = 512
   const g = c.getContext('2d')!
-  const grad = g.createLinearGradient(0, 0, 0, 96)
-  grad.addColorStop(0, '#f4f6fb')
-  grad.addColorStop(1, '#c9d0de')
+  let s = semente
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647)
+  const grad = g.createLinearGradient(0, 0, 512, 0)
+  grad.addColorStop(0, base)
+  grad.addColorStop(0.5, claro)
+  grad.addColorStop(1, base)
   g.fillStyle = grad
-  g.fillRect(0, 0, 512, 96)
-  g.strokeStyle = '#0B1E5E'
-  g.lineWidth = 6
-  g.strokeRect(10, 10, 492, 76)
-  g.fillStyle = '#0B1E5E'
-  g.font = '900 condensed 58px Archivo, "Arial Narrow", sans-serif'
-  g.textAlign = 'center'
-  g.textBaseline = 'middle'
-  g.fillText('O MOTTA NÃO.', 256, 52)
+  g.fillRect(0, 0, 512, 512)
+  // veios ondulados ao longo do comprimento
+  for (let i = 0; i < 70; i++) {
+    const y0 = rnd() * 512
+    const amp = 2 + rnd() * 9
+    const freq = 0.004 + rnd() * 0.012
+    const fase = rnd() * 10
+    g.strokeStyle = veio
+    g.globalAlpha = 0.06 + rnd() * 0.2
+    g.lineWidth = 0.6 + rnd() * 2.4
+    g.beginPath()
+    for (let x = 0; x <= 512; x += 6) {
+      const y = y0 + Math.sin(x * freq + fase) * amp + Math.sin(x * freq * 3.1) * amp * 0.25
+      x === 0 ? g.moveTo(x, y) : g.lineTo(x, y)
+    }
+    g.stroke()
+  }
+  // poros
+  g.globalAlpha = 0.08
+  g.fillStyle = veio
+  for (let i = 0; i < 2600; i++) g.fillRect(rnd() * 512, rnd() * 512, 1 + rnd() * 3, 1)
+  g.globalAlpha = 1
   const t = new THREE.CanvasTexture(c)
   t.colorSpace = THREE.SRGBColorSpace
-  t.anisotropy = 4
+  t.wrapS = t.wrapT = THREE.RepeatWrapping
+  t.anisotropy = 8
   return t
 }
 
+/** Carimbo de madeira: bloco envernizado, borracha embaixo, cabo torneado com bola no topo. */
 function montarCarimbo() {
   const modelo = new THREE.Group()
+  const verniz = { roughness: 0.42, clearcoat: 0.55, clearcoatRoughness: 0.28 }
 
   const borracha = new THREE.Mesh(
-    new RoundedBoxGeometry(0.98, 0.07, 0.44, 2, 0.015),
-    new THREE.MeshStandardMaterial({ color: '#141a2e', roughness: 0.92 }),
+    new RoundedBoxGeometry(0.96, 0.05, 0.6, 2, 0.012),
+    new THREE.MeshStandardMaterial({ color: '#2a1414', roughness: 0.95 }),
   )
-  borracha.position.y = 0.035
+  borracha.position.y = 0.025
   modelo.add(borracha)
 
-  const base = new THREE.Mesh(
-    new RoundedBoxGeometry(1.06, 0.24, 0.5, 4, 0.05),
-    new THREE.MeshPhysicalMaterial({ color: '#0B1E5E', roughness: 0.32, clearcoat: 0.9, clearcoatRoughness: 0.12 }),
+  const texBloco = texturaMadeira('#c8741f', '#7a3c0c', '#e09a45', 7)
+  texBloco.repeat.set(1.4, 1)
+  const bloco = new THREE.Mesh(
+    new RoundedBoxGeometry(1.0, 0.28, 0.64, 4, 0.025),
+    new THREE.MeshPhysicalMaterial({ map: texBloco, color: '#e9a768', ...verniz }),
   )
-  base.position.y = 0.07 + 0.12
-  modelo.add(base)
+  bloco.position.y = 0.05 + 0.14
+  modelo.add(bloco)
 
-  const friso = new THREE.Mesh(
-    new RoundedBoxGeometry(1.08, 0.035, 0.52, 2, 0.012),
-    new THREE.MeshStandardMaterial({ color: '#dfe5f2', metalness: 1, roughness: 0.22 }),
-  )
-  friso.position.y = 0.07 + 0.03
-  modelo.add(friso)
-
-  const etiqueta = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.74, 0.14),
-    new THREE.MeshStandardMaterial({ map: texturaEtiqueta(), roughness: 0.4, metalness: 0.2 }),
-  )
-  etiqueta.position.set(0, 0.07 + 0.11, 0.2505)
-  modelo.add(etiqueta)
-
-  // Cabo torneado (perfil girado)
-  const y0 = 0.31
+  // cabo torneado: pé alargado, pescoço, anel e bola levemente achatada
+  const y0 = 0.33
   const perfil = [
-    [0.0, 0], [0.14, 0], [0.14, 0.03], [0.09, 0.05], [0.072, 0.12], [0.066, 0.24], [0.082, 0.3],
-    [0.14, 0.36], [0.19, 0.44], [0.207, 0.5], [0.192, 0.57], [0.145, 0.625], [0.075, 0.655], [0.0, 0.665],
+    [0.0, 0], [0.135, 0], [0.13, 0.025], [0.1, 0.05], [0.078, 0.1], [0.07, 0.2], [0.072, 0.28], [0.09, 0.31],
+    [0.092, 0.33], [0.082, 0.345], [0.11, 0.38], [0.15, 0.43], [0.165, 0.49], [0.158, 0.55], [0.13, 0.6], [0.08, 0.63], [0.0, 0.64],
   ].map(([r, y]) => new THREE.Vector2(r, y))
-  const cabo = new THREE.Mesh(
-    new THREE.LatheGeometry(perfil, 48),
-    new THREE.MeshPhysicalMaterial({ color: '#1F4FE0', roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.06, sheen: 0.3 }),
-  )
+  const texCabo = texturaMadeira('#d9a35a', '#9a5a1c', '#ecc07e', 21)
+  texCabo.rotation = Math.PI / 2
+  texCabo.repeat.set(1, 2)
+  const cabo = new THREE.Mesh(new THREE.LatheGeometry(perfil, 56), new THREE.MeshPhysicalMaterial({ map: texCabo, color: '#f0bd86', ...verniz }))
   cabo.position.y = y0
   modelo.add(cabo)
-
-  const anel = new THREE.Mesh(
-    new THREE.TorusGeometry(0.083, 0.014, 12, 40),
-    new THREE.MeshStandardMaterial({ color: '#e8ecf6', metalness: 1, roughness: 0.18 }),
-  )
-  anel.rotation.x = Math.PI / 2
-  anel.position.y = y0 + 0.27
-  modelo.add(anel)
 
   return modelo
 }
@@ -116,7 +115,7 @@ export class CenaCarimbo {
     const grosso = window.matchMedia('(pointer: coarse)').matches
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, grosso ? 1.75 : 2))
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
-    this.renderer.toneMappingExposure = 1.05
+    this.renderer.toneMappingExposure = 0.92
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
     const pmrem = new THREE.PMREMGenerator(this.renderer)
@@ -127,7 +126,7 @@ export class CenaCarimbo {
     const chave = new THREE.DirectionalLight('#ffffff', 2.4)
     chave.position.set(-4, 6, 8)
     this.scene.add(chave)
-    const recorte = new THREE.DirectionalLight('#7fa4ff', 1.6)
+    const recorte = new THREE.DirectionalLight('#ffd9a8', 1.3)
     recorte.position.set(5, 3, -4)
     this.scene.add(recorte)
 
@@ -185,11 +184,11 @@ export class CenaCarimbo {
     // pairando ao lado da cabeça (o rosto fica livre); no celular, mais perto do centro
     const z = 0.55 * L
     const k = (DIST - z) / DIST
-    const lateral = this.w / this.h < 0.8 ? 0.42 : 0.82
+    const lateral = this.w / this.h < 0.8 ? 0.42 : 0.98
     const bob = Math.sin(t * 1.6) * 0.035 * L
     const tela = {
       x: this.alvo.x + (lateral + this.mouse.sx * 0.08) * L,
-      y: this.alvo.y + (0.28 + this.entrada) * L + bob - this.mouse.sy * 0.05 * L,
+      y: this.alvo.y + (-0.05 + this.entrada) * L + bob - this.mouse.sy * 0.05 * L,
     }
     this.externo.position.set(tela.x * k, tela.y * k, z)
     this.externo.rotation.z = this.giro - 0.32 + Math.sin(t * 0.9) * 0.05 + this.mouse.sx * 0.08

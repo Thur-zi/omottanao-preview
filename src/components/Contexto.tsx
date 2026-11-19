@@ -1,6 +1,7 @@
-import { m } from 'motion/react'
-import { CONTEXTO, LETREIRO, NUMEROS } from '../data/conteudo'
-import { EASE, NumeroAnimado, PalavrasAcendem, Surge } from '../lib/movimento'
+import { useRef } from 'react'
+import { m, useScroll, useSpring, useTransform } from 'motion/react'
+import { LETREIRO } from '../data/conteudo'
+import { EASE, NumeroAnimado, Surge, TituloRevela } from '../lib/movimento'
 
 export function Letreiro({ escuro = true }: { escuro?: boolean }) {
   const itens = [...LETREIRO, ...LETREIRO]
@@ -22,37 +23,71 @@ export function Letreiro({ escuro = true }: { escuro?: boolean }) {
   )
 }
 
-export function Contexto() {
-  return (
-    <section id="contexto" className="arco z-10 bg-papel pb-24 pt-24 sm:pb-32 sm:pt-32">
-      <div className="container">
-        <Surge>
-          <span className="rotulo text-azul">A eleição</span>
-        </Surge>
-        <PalavrasAcendem
-          texto={CONTEXTO}
-          className="equilibra mt-8 max-w-[22ch] font-titulo text-[2.15rem] font-extrabold leading-[1.02] tracking-[-0.02em] text-azul-tinta sm:text-6xl lg:max-w-[24ch] lg:text-[5.1rem] [font-stretch:82%]"
-        />
+/** Fatos do briefing, em ordem cronológica. */
+const PASSOS = [
+  { quando: 'Agora', numero: 121, sufixo: '', unidade: 'deputados do PL', titulo: 'O PL decide', texto: 'Uma consulta interna define, nos próximos dias, se o partido apoia Motta ou lança candidato próprio.', agora: true },
+  { quando: 'Até fevereiro', numero: 15, sufixo: '', unidade: 'partidos com Motta', titulo: 'A pressão da base', texto: 'Motta tem o apoio formal de 15 partidos, incluindo o PT. Cada deputado precisa ouvir quem votou nele.' },
+  { quando: '1º de fevereiro', numero: 513, sufixo: '', unidade: 'deputados votam', titulo: 'Voto secreto', texto: 'Cada um vota sozinho. Apoio de partido não garante o voto de ninguém.' },
+  { quando: 'Para vencer', numero: 257, sufixo: '', unidade: 'votos no 1º turno', titulo: 'A maioria', texto: 'É o número que Motta precisa alcançar. Cada NÃO afasta ele dessa conta.' },
+]
 
-        <ul className="mt-20 grid grid-cols-2 gap-x-5 gap-y-12 lg:mt-28 lg:grid-cols-4">
-          {NUMEROS.map((n, i) => (
-            <Surge as="li" key={n.rotulo} atraso={i * 0.08} className="relative pt-6">
-              <m.span
-                aria-hidden
-                className="absolute left-0 top-0 h-[3px] w-full origin-left bg-azul-tinta"
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.2, ease: EASE, delay: 0.2 + i * 0.1 }}
-              />
-              <div className="num text-[4.6rem] leading-[0.85] text-azul sm:text-[6.5rem]">
-                <NumeroAnimado valor={n.valor} sufixo={'sufixo' in n ? n.sufixo : ''} />
+export function Contexto() {
+  const trilho = useRef<HTMLOListElement>(null)
+  const { scrollYProgress } = useScroll({ target: trilho, offset: ['start 0.8', 'end 0.6'] })
+  const linha = useSpring(useTransform(scrollYProgress, [0, 1], [0, 1]), { stiffness: 90, damping: 24 })
+
+  return (
+    <section id="contexto" className="arco relative z-20 overflow-hidden bg-papel pb-24 pt-24 sm:pb-32 sm:pt-32">
+      <div className="container">
+        <div className="flex flex-wrap items-end justify-between gap-8">
+          <div>
+            <Surge>
+              <span className="rotulo text-azul">Como funciona</span>
+            </Surge>
+            <h2 className="titulo mt-5 max-w-[13ch] text-azul-tinta">
+              <TituloRevela texto="O caminho até 1º de fevereiro" destaque={['fevereiro']} classeDestaque="text-azul" />
+            </h2>
+          </div>
+          <Surge atraso={0.2}>
+            <p className="max-w-[34ch] text-lg leading-relaxed text-azul-tinta/60">A eleição para presidente da Câmara em quatro momentos. O primeiro está acontecendo agora.</p>
+          </Surge>
+        </div>
+
+        <ol ref={trilho} className="relative mt-16 grid gap-0 lg:mt-24 lg:grid-cols-4 lg:gap-6">
+          {/* linha que se desenha com a rolagem: vertical no celular, horizontal no desktop */}
+          <span aria-hidden className="absolute bottom-0 left-[19px] top-0 w-[3px] rounded-full bg-azul-tinta/[0.08] lg:bottom-auto lg:left-0 lg:right-0 lg:top-[19px] lg:h-[3px] lg:w-auto" />
+          <m.span aria-hidden style={{ scaleY: linha }} className="absolute bottom-0 left-[19px] top-0 w-[3px] origin-top rounded-full bg-azul lg:hidden" />
+          <m.span aria-hidden style={{ scaleX: linha }} className="absolute left-0 right-0 top-[19px] hidden h-[3px] origin-left rounded-full bg-azul lg:block" />
+
+          {PASSOS.map((p, i) => (
+            <Surge as="li" key={p.titulo} atraso={i * 0.08} className="relative pb-14 pl-16 lg:pb-0 lg:pl-0 lg:pt-16">
+              <span className="absolute left-0 top-0 grid h-10 w-10 place-items-center rounded-full border-[3px] border-papel bg-azul-tinta font-sans text-[13px] font-extrabold text-white shadow-suave">
+                {p.agora && <span className="absolute inset-0 animate-ping rounded-full bg-azul opacity-50" />}
+                <span className="relative">{i + 1}</span>
+              </span>
+              <p className={`font-sans text-[11px] font-extrabold uppercase tracking-[0.2em] ${p.agora ? 'text-azul' : 'text-azul-tinta/45'}`}>
+                {p.agora && <span className="mr-2 inline-block h-2 w-2 rounded-full bg-azul align-middle" />}
+                {p.quando}
+              </p>
+              <div className="mt-4 flex items-baseline gap-3">
+                <span className="num text-[4.8rem] leading-[0.8] text-azul-tinta sm:text-[5.6rem]">
+                  <NumeroAnimado valor={p.numero} sufixo={p.sufixo} />
+                </span>
+                <span className="max-w-[9ch] text-[13px] font-bold leading-tight text-azul-tinta/50">{p.unidade}</span>
               </div>
-              <p className="mt-3 font-titulo text-xl font-extrabold uppercase leading-none [font-stretch:80%] sm:text-2xl">{n.rotulo}</p>
-              <p className="mt-2 max-w-[22ch] text-[15px] leading-snug text-azul-tinta/60">{n.detalhe}</p>
+              <m.h3
+                className="mt-5 font-titulo text-[1.9rem] font-black uppercase leading-[0.92] text-azul-tinta [font-stretch:72%]"
+                initial={{ opacity: 0, x: -12 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, ease: EASE, delay: 0.2 + i * 0.08 }}
+              >
+                {p.titulo}
+              </m.h3>
+              <p className="mt-3 max-w-[34ch] text-[15.5px] leading-relaxed text-azul-tinta/65">{p.texto}</p>
             </Surge>
           ))}
-        </ul>
+        </ol>
       </div>
     </section>
   )

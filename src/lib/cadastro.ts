@@ -10,14 +10,18 @@ import type { UF } from '../data/votometro'
 export const TEXTO_CONSENTIMENTO =
   'Autorizo o uso do meu nome, WhatsApp e estado para receber comunicações desta mobilização por WhatsApp, conforme a Política de Privacidade. Posso cancelar a qualquer momento.'
 
-export type Lead = { nome: string; whatsapp: string; uf: UF }
+export type Lead = { nome: string; sobrenome: string; whatsapp: string; uf: UF; cidade: { codigo_ibge: number; nome: string } }
 
 export async function enviarLead(lead: Lead): Promise<{ ok: boolean; demonstracao: boolean }> {
   const agora = new Date()
   const payload = {
     nome: lead.nome.trim(),
+    sobrenome: lead.sobrenome.trim(),
+    nome_completo: `${lead.nome.trim()} ${lead.sobrenome.trim()}`.trim(),
     whatsapp: '55' + lead.whatsapp.replace(/\D/g, ''),
     uf: lead.uf,
+    cidade: lead.cidade.nome,
+    cidade_ibge: lead.cidade.codigo_ibge,
     segmento: `uf_${lead.uf}`,
     consentimento: {
       aceito: true,
@@ -57,6 +61,21 @@ export function mascaraWhatsapp(v: string) {
   if (d.length > 6) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
   if (d.length > 2) return `(${d.slice(0, 2)}) ${d.slice(2)}`
   return d
+}
+
+/** Municípios da UF (malha IBGE), carregados sob demanda de /dados/municipios/UF.json. */
+const cacheMunicipios = new Map<string, Promise<[number, string][]>>()
+export function carregarMunicipios(uf: UF) {
+  if (!cacheMunicipios.has(uf)) {
+    cacheMunicipios.set(
+      uf,
+      fetch(`${import.meta.env.BASE_URL}dados/municipios/${uf}.json`).then((r) => {
+        if (!r.ok) throw new Error('municipios')
+        return r.json()
+      }),
+    )
+  }
+  return cacheMunicipios.get(uf)!
 }
 
 export const whatsappValido = (v: string) => /^[1-9]{2}9\d{8}$/.test(v.replace(/\D/g, ''))
