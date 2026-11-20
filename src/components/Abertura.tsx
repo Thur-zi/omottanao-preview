@@ -34,6 +34,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
   const flash = useRef<HTMLDivElement>(null)
   const cena = useRef<CenaCarimbo | null>(null)
   const faseRef = useRef(fase)
+  const golpeRef = useRef<() => void>(() => undefined)
   faseRef.current = fase
   const cta = useMagnetico<HTMLButtonElement>(0.3)
 
@@ -77,7 +78,12 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
         ro = new ResizeObserver(posicionar)
         if (secao.current) ro.observe(secao.current)
         // espera a abertura das barras para o carimbo entrar
-        setTimeout(() => vivo && faseRef.current === 'espera' && c.entrar(), reduz ? 0 : 1300)
+        // depois de pousar sobre a testa, bate sozinho (o botão só adianta)
+        setTimeout(async () => {
+          if (!vivo || faseRef.current !== 'espera') return
+          await c.entrar()
+          setTimeout(() => vivo && faseRef.current === 'espera' && golpeRef.current(), reduz ? 0 : 700)
+        }, reduz ? 0 : 1300)
       })
       .catch(() => {
         /* sem WebGL: segue com o carimbo 2D */
@@ -153,7 +159,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
     }
     aoAbrir()
     // depois do carimbo, leva direto ao abaixo-assinado (sem precisar tocar em "Explorar")
-    setTimeout(() => rolarPara('assine'), reduz ? 200 : 1150)
+    setTimeout(() => rolarPara('assine'), reduz ? 200 : 750)
   }, [aoAbrir, reduz])
 
   const golpe = useCallback(async () => {
@@ -173,6 +179,15 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
     }
     abrir()
   }, [abrir, impacto])
+
+  golpeRef.current = golpe
+
+  /* a abertura roda sozinha: se o 3D não carregar a tempo, carimba assim mesmo */
+  useEffect(() => {
+    if (fase !== 'espera') return
+    const t = setTimeout(() => golpeRef.current(), reduz ? 600 : 6500)
+    return () => clearTimeout(t)
+  }, [fase, reduz])
 
   /* tentar rolar durante a espera também dispara o golpe */
   useEffect(() => {
