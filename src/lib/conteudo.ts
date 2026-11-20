@@ -42,7 +42,7 @@ function aplicar(r: Resposta) {
   const c = r.config
   if (c.whatsapp_numero) CONFIG.whatsappNumero = c.whatsapp_numero
   CONFIG.ga4Id = c.ga4_id || null
-  CONFIG.metaPixelId = c.meta_pixel_id || null
+  CONFIG.metaPixelId = c.meta_pixel_id || CONFIG.metaPixelId
   if (c.responsavel) CONFIG.responsavel = c.responsavel
   if (c.encarregado_nome) CONFIG.encarregado.nome = c.encarregado_nome
   if (c.encarregado_email) CONFIG.encarregado.email = c.encarregado_email

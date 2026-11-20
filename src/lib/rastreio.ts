@@ -97,9 +97,20 @@ export function rastrear(evento: string, params: Record<string, unknown> = {}, o
   const p = { ...params, uf: params.uf ?? ORIGEM.uf, utm_source: ORIGEM.utm_source, utm_campaign: ORIGEM.utm_campaign }
   window.dataLayer.push({ event: evento, ...p })
   window.gtag?.('event', evento, p)
-  const meta: Record<string, string> = { lead: 'Lead', whatsapp_click: 'Contact', estado_visto: 'ViewContent' }
-  if (window.fbq) meta[evento] ? window.fbq('track', meta[evento], p) : window.fbq('trackCustom', evento, p)
+  const meta: Record<string, string> = { whatsapp_click: 'Contact', estado_visto: 'ViewContent' }
+  // 'lead' fica de fora: o Lead da Meta só sai em pixelLead(), depois que o servidor confirma
+  if (window.fbq && evento !== 'lead') meta[evento] ? window.fbq('track', meta[evento], p) : window.fbq('trackCustom', evento, p)
   enfileirar(evento, params, opcoes.unico)
+}
+
+/** Pixel da Meta: Lead só quando o servidor confirmou que recebeu a assinatura. */
+export function pixelLead(params: { uf: string; novo: boolean }) {
+  window.fbq?.(
+    'track',
+    'Lead',
+    { content_name: 'abaixo-assinado', content_category: params.uf, status: params.novo ? 'novo' : 'repetido' },
+    { eventID: `lead-${SESSAO}-${Date.now()}` },
+  )
 }
 
 /** GA4 e Pixel: chamados depois que a configuração do painel chega. */

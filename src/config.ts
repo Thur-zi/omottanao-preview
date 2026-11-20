@@ -15,7 +15,8 @@ export const CONFIG = {
   /** Número WABA do Luiz: DDI + DDD + número, só dígitos. */
   whatsappNumero: '55XXXXXXXXXXX',
   ga4Id: null as string | null,
-  metaPixelId: null as string | null,
+  /** Pixel da Meta (o painel pode trocar). */
+  metaPixelId: '2121776075436409' as string | null,
   versaoConsentimento: 'lgpd-v1-2026-11-18',
   site: 'omottanao.com.br',
   /** Mostra os selos "dado de exemplo" enquanto houver dados fictícios. */

@@ -12,7 +12,7 @@ export const TEXTO_CONSENTIMENTO =
 
 export type Lead = { nome: string; sobrenome: string; whatsapp: string; uf: UF; cidade: { codigo_ibge: number; nome: string } }
 
-export async function enviarLead(lead: Lead, extra: { tempo?: number; empresa?: string } = {}): Promise<{ ok: boolean; demonstracao: boolean; motivo?: string }> {
+export async function enviarLead(lead: Lead, extra: { tempo?: number; empresa?: string } = {}): Promise<{ ok: boolean; demonstracao: boolean; motivo?: string; novo?: boolean }> {
   const agora = new Date()
   const payload = {
     nome: lead.nome.trim(),
@@ -52,8 +52,8 @@ export async function enviarLead(lead: Lead, extra: { tempo?: number; empresa?: 
       body: JSON.stringify(payload),
       keepalive: true,
     })
-    const j = (await r.json().catch(() => ({}))) as { ok?: boolean; motivo?: string }
-    return { ok: r.ok && j.ok !== false, demonstracao: false, motivo: j.motivo }
+    const j = (await r.json().catch(() => ({}))) as { ok?: boolean; motivo?: string; novo?: boolean }
+    return { ok: r.ok && j.ok === true, demonstracao: false, motivo: j.motivo, novo: j.novo }
   } catch {
     return { ok: false, demonstracao: false }
   }

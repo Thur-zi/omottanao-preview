@@ -13,7 +13,7 @@ import { Combobox, type Opcao } from './Combobox'
 import { useContagem } from '../lib/contagem'
 import { definirUF, useUF } from '../lib/estado'
 import { EASE, Surge, TituloRevela, rolarPara } from '../lib/movimento'
-import { linkWhatsapp, rastrear } from '../lib/rastreio'
+import { linkWhatsapp, pixelLead, rastrear } from '../lib/rastreio'
 import { IconeWhatsapp } from './Icones'
 import { Impressao } from './Marca'
 
@@ -210,6 +210,8 @@ export function Assine() {
       return
     }
     rastrear('lead', { uf, ok: r.ok })
+    // Pixel da Meta: só com a confirmação do servidor (assinatura gravada)
+    if (r.ok && !r.demonstracao) pixelLead({ uf: uf as string, novo: r.novo !== false })
     definirUF(uf as UF)
     setFeito({ nome: nome.trim().split(' ')[0], uf: uf as UF })
     // o carimbo bate na cédula…
