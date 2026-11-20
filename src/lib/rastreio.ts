@@ -97,9 +97,7 @@ export function rastrear(evento: string, params: Record<string, unknown> = {}, o
   const p = { ...params, uf: params.uf ?? ORIGEM.uf, utm_source: ORIGEM.utm_source, utm_campaign: ORIGEM.utm_campaign }
   window.dataLayer.push({ event: evento, ...p })
   window.gtag?.('event', evento, p)
-  const meta: Record<string, string> = { whatsapp_click: 'Contact', estado_visto: 'ViewContent' }
-  // 'lead' fica de fora: o Lead da Meta só sai em pixelLead(), depois que o servidor confirma
-  if (window.fbq && evento !== 'lead') meta[evento] ? window.fbq('track', meta[evento], p) : window.fbq('trackCustom', evento, p)
+  // Pixel da Meta: só PageView (ao carregar) e Lead (em pixelLead, depois que o servidor confirma)
   enfileirar(evento, params, opcoes.unico)
 }
 
