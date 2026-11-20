@@ -35,6 +35,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
   const cena = useRef<CenaCarimbo | null>(null)
   const faseRef = useRef(fase)
   const golpeRef = useRef<() => void>(() => undefined)
+  const inicio = useRef(performance.now())
   faseRef.current = fase
   const cta = useMagnetico<HTMLButtonElement>(0.3)
 
@@ -77,9 +78,13 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
         posicionar()
         ro = new ResizeObserver(posicionar)
         if (secao.current) ro.observe(secao.current)
-        // espera a abertura das barras para o carimbo entrar
-        // abre como se a pessoa tivesse apertado: o carimbo já desce e bate
-        setTimeout(() => vivo && faseRef.current === 'espera' && golpeRef.current(), reduz ? 0 : 350)
+        // a página aparece e assenta; então o carimbo entra e bate (sem precisar do botão)
+        const espera = Math.max(0, 1000 - (performance.now() - inicio.current))
+        setTimeout(async () => {
+          if (!vivo || faseRef.current !== 'espera') return
+          if (!reduz) await c.entrar()
+          setTimeout(() => vivo && faseRef.current === 'espera' && golpeRef.current(), reduz ? 0 : 350)
+        }, reduz ? 0 : espera)
       })
       .catch(() => {
         /* sem WebGL: segue com o carimbo 2D */
@@ -192,7 +197,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
   /* a abertura roda sozinha: se o 3D demorar, carimba assim mesmo (versão 2D) */
   useEffect(() => {
     if (fase !== 'espera') return
-    const t = setTimeout(() => golpeRef.current(), reduz ? 300 : 1800)
+    const t = setTimeout(() => golpeRef.current(), reduz ? 300 : 4200)
     return () => clearTimeout(t)
   }, [fase, reduz])
 
@@ -267,7 +272,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
               className="h-full w-full select-none object-cover [mask-image:radial-gradient(closest-side,#000_72%,transparent_100%)]"
               initial={reduz || aberto ? false : { opacity: 0, scale: 1.14 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1.1, ease: EASE, delay: 0.05 }}
+              transition={{ duration: 1.5, ease: EASE, delay: 0.1 }}
             />
             {/* alvo: onde o carimbo vai bater (some no golpe) */}
             <AnimatePresence>
