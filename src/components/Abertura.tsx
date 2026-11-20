@@ -78,12 +78,8 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
         ro = new ResizeObserver(posicionar)
         if (secao.current) ro.observe(secao.current)
         // espera a abertura das barras para o carimbo entrar
-        // depois de pousar sobre a testa, bate sozinho (o botão só adianta)
-        setTimeout(async () => {
-          if (!vivo || faseRef.current !== 'espera') return
-          await c.entrar()
-          setTimeout(() => vivo && faseRef.current === 'espera' && golpeRef.current(), reduz ? 0 : 700)
-        }, reduz ? 0 : 1300)
+        // abre como se a pessoa tivesse apertado: o carimbo já desce e bate
+        setTimeout(() => vivo && faseRef.current === 'espera' && golpeRef.current(), reduz ? 0 : 350)
       })
       .catch(() => {
         /* sem WebGL: segue com o carimbo 2D */
@@ -159,33 +155,44 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
     }
     aoAbrir()
     // depois do carimbo, leva direto ao abaixo-assinado (sem precisar tocar em "Explorar")
-    setTimeout(() => rolarPara('assine'), reduz ? 200 : 750)
+    setTimeout(() => rolarPara('assine'), reduz ? 200 : 450)
   }, [aoAbrir, reduz])
 
   const golpe = useCallback(async () => {
     if (faseRef.current !== 'espera') return
     setFase('golpe')
     rastrear('carimbo', { local: 'abertura' })
+    // o site abre logo depois do impacto, enquanto o carimbo ainda sai de cena
+    let aberto = false
+    const abrirUmaVez = () => {
+      if (aberto) return
+      aberto = true
+      abrir()
+    }
     if (cena.current) {
-      await cena.current.bater(impacto)
+      const c = cena.current
+      await c.bater(() => {
+        impacto()
+        setTimeout(abrirUmaVez, 450)
+      })
       // o carimbo saiu de cena: libera o WebGL da abertura
-      cena.current.dispose()
-      cena.current = null
+      c.dispose()
+      if (cena.current === c) cena.current = null
       if (tela3d.current) tela3d.current.style.display = 'none'
     } else {
       await new Promise((r) => setTimeout(r, 380))
       impacto()
-      await new Promise((r) => setTimeout(r, 900))
+      await new Promise((r) => setTimeout(r, 450))
     }
-    abrir()
+    abrirUmaVez()
   }, [abrir, impacto])
 
   golpeRef.current = golpe
 
-  /* a abertura roda sozinha: se o 3D não carregar a tempo, carimba assim mesmo */
+  /* a abertura roda sozinha: se o 3D demorar, carimba assim mesmo (versão 2D) */
   useEffect(() => {
     if (fase !== 'espera') return
-    const t = setTimeout(() => golpeRef.current(), reduz ? 600 : 6500)
+    const t = setTimeout(() => golpeRef.current(), reduz ? 300 : 1800)
     return () => clearTimeout(t)
   }, [fase, reduz])
 
@@ -260,7 +267,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
               className="h-full w-full select-none object-cover [mask-image:radial-gradient(closest-side,#000_72%,transparent_100%)]"
               initial={reduz || aberto ? false : { opacity: 0, scale: 1.14 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 2.4, ease: EASE, delay: 0.2 }}
+              transition={{ duration: 1.1, ease: EASE, delay: 0.05 }}
             />
             {/* alvo: onde o carimbo vai bater (some no golpe) */}
             <AnimatePresence>
