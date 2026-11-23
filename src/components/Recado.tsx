@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Download, Share2 } from 'lucide-react'
+import { Download } from 'lucide-react'
+import { IconeWhatsapp } from './Icones'
 import { CONFIG } from '../config'
 import { NOMES_UF, UFS, type UF } from '../data/votometro'
 import { carregarDeputados, partido, type Deputado } from '../data/partidos'
@@ -66,7 +67,12 @@ export function Recado() {
 
   useEffect(() => {
     if (!tela.current) return
-    const t = setTimeout(() => desenharCard(tela.current!, img.current, { deputado, nome, uf, frase, formato, site: CONFIG.site, foto: fotoDep.current, partido: depSel?.partido }), 60)
+    const t = setTimeout(() => {
+      desenharCard(tela.current!, img.current, { deputado, nome, uf, frase, formato, site: CONFIG.site, foto: fotoDep.current, partido: depSel?.partido })
+      // a imagem já fica pronta: no toque, o compartilhar abre na hora (o iPhone exige isso)
+      pronta.current = null
+      tela.current?.toBlob((b) => (pronta.current = b), 'image/png')
+    }, 60)
     return () => clearTimeout(t)
   }, [deputado, nome, uf, frase, formato, pronto, fotoPronta])
 
@@ -82,6 +88,7 @@ export function Recado() {
   const soltar = () => moldura.current && (moldura.current.style.transform = '')
 
   const arquivo = () => `omottanao-${(deputado || 'card').normalize('NFD').replace(/[^\w]+/g, '-').toLowerCase()}.png`
+  const pronta = useRef<Blob | null>(null)
   const blob = () => new Promise<Blob | null>((r) => tela.current!.toBlob(r, 'image/png'))
 
   async function baixar() {
@@ -94,22 +101,24 @@ export function Recado() {
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
     rastrear('card_gerado', { acao: 'download', formato, uf })
   }
+  /** Manda o card no WhatsApp: no celular abre o compartilhar com a imagem (é só tocar no WhatsApp); no computador baixa a imagem e abre o WhatsApp Web. */
   async function compartilhar() {
-    const b = await blob()
+    const texto = `Eu votei no meu deputado, mas não foi pra eleger o Motta. Peça coerência você também: https://${CONFIG.site}`
+    rastrear('compartilhar', { local: 'card', formato, uf })
+    const b = pronta.current ?? (await blob())
     if (!b) return
     const f = new File([b], arquivo(), { type: 'image/png' })
-    const texto = `Meu voto não foi para eleger o Motta. Veja quem já disse NÃO: https://${CONFIG.site}`
-    rastrear('card_gerado', { acao: 'share', formato, uf })
     if (navigator.canShare?.({ files: [f] })) {
       try {
         await navigator.share({ files: [f], text: texto })
-      } catch {
-        /* cancelado */
+        return
+      } catch (e) {
+        if ((e as Error)?.name === 'AbortError') return // a pessoa fechou o menu
       }
-    } else {
-      await baixar()
-      window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
     }
+    // sem compartilhar de arquivo (computador): baixa a imagem e abre o WhatsApp com o texto
+    await baixar()
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
   }
 
   return (
@@ -232,8 +241,8 @@ export function Recado() {
               <canvas ref={tela} className="w-full rounded-[22px] bg-azul-fundo shadow-flutua" role="img" aria-label="Prévia do card" />
             </div>
             <div className="mx-auto mt-6 grid max-w-[400px] gap-3">
-              <button type="button" className="btn-azul" onClick={compartilhar}>
-                <Share2 size={19} /> Compartilhar card
+              <button type="button" className="btn-zap" onClick={compartilhar} data-rastreio="whatsapp_click:card">
+                <IconeWhatsapp /> Mandar no WhatsApp
               </button>
               <button type="button" className="btn-linha text-azul-tinta hover:bg-azul-tinta/5" onClick={baixar}>
                 <Download size={19} /> Baixar imagem
