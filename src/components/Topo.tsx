@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, m, useMotionValueEvent, useScroll } from 'motion/react'
-import { EASE, EASE_CINEMA, rolarPara } from '../lib/movimento'
+import { AnimatePresence, m, useMotionValueEvent } from 'motion/react'
+import { EASE, EASE_CINEMA, rolarPara, useProgressoPagina, useRolagemY } from '../lib/movimento'
 import { Logo } from './Marca'
 import { CONFIG } from '../config'
 import { useConteudo } from '../lib/conteudo'
@@ -17,7 +17,8 @@ export function Topo({ visivel }: { visivel: boolean }) {
   const links = LINKS.filter(([id]) => id !== 'votometro' || CONFIG.mostrarVotometro)
   const [solido, setSolido] = useState(false)
   const [menu, setMenu] = useState(false)
-  const { scrollY, scrollYProgress } = useScroll()
+  const scrollY = useRolagemY()
+  const scrollYProgress = useProgressoPagina()
   useMotionValueEvent(scrollY, 'change', (v) => setSolido(v > window.innerHeight * 0.7))
 
   useEffect(() => {

@@ -191,3 +191,12 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Seções longe da tela não são calculadas nem desenhadas até a pessoa chegar perto */
+.fora-da-tela {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1100px;
+}
+.calcular-tudo .fora-da-tela {
+  content-visibility: visible;
+}

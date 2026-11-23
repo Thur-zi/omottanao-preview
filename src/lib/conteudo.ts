@@ -58,6 +58,28 @@ function aplicar(r: Resposta) {
   ouvintes.forEach((f) => f())
 }
 
+/**
+ * Pixel e GA carregam depois da abertura (os scripts deles pesam ~150 ms num celular médio
+ * e engasgavam o carimbo). A visita (PageView) continua registrada, só alguns segundos depois.
+ */
+function agendarTags() {
+  const ocioso = (f: () => void) => {
+    const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback
+    if (ric) ric(f, { timeout: 2000 })
+    else setTimeout(f, 300)
+  }
+  const emAbertura = document.documentElement.classList.contains('com-abertura') && !sessionStorage.getItem('omn:carimbado')
+  if (!emAbertura) return ocioso(carregarTags)
+  let feito = false
+  const vai = () => {
+    if (feito) return
+    feito = true
+    setTimeout(() => ocioso(carregarTags), 900)
+  }
+  window.addEventListener('omn:aberto', vai, { once: true })
+  setTimeout(vai, 7000)
+}
+
 export function carregarConteudo() {
   if (!promessa) {
     promessa = (CONFIG.conteudo ? fetch(CONFIG.conteudo).then((r) => (r.ok ? (r.json() as Promise<Resposta>) : Promise.reject())) : Promise.reject())
@@ -65,7 +87,7 @@ export function carregarConteudo() {
       .catch(() => {
         /* segue com os dados locais */
       })
-      .finally(carregarTags)
+      .finally(agendarTags)
   }
   return promessa
 }

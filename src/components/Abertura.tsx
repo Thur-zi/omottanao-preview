@@ -3,8 +3,8 @@
  * o CTA dispara o golpe e só então o site "abre" (barras recolhem, título sobe, rolagem libera).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, animate, m, useReducedMotion, useScroll, useTransform } from 'motion/react'
-import { EASE, EASE_CINEMA, rolarPara, travarRolagem, useMagnetico } from '../lib/movimento'
+import { AnimatePresence, animate, m, useReducedMotion, useTransform } from 'motion/react'
+import { EASE, EASE_CINEMA, rolarPara, travarRolagem, useMagnetico, useRolagemY } from '../lib/movimento'
 import { rastrear } from '../lib/rastreio'
 import { ChevronDown, ChevronsLeft, ChevronsRight, Stamp } from 'lucide-react'
 import { Impressao } from './Marca'
@@ -81,6 +81,9 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
         // a página aparece e assenta; então o carimbo entra e bate (sem precisar do botão)
         const espera = Math.max(0, 1000 - (performance.now() - inicio.current))
         setTimeout(async () => {
+          if (!vivo || faseRef.current !== 'espera') return
+          // shaders prontos antes de aparecer (no máximo 1,5 s de espera)
+          await Promise.race([c.pronto, new Promise((ok) => setTimeout(ok, 1500))])
           if (!vivo || faseRef.current !== 'espera') return
           if (!reduz) await c.entrar()
           setTimeout(() => vivo && faseRef.current === 'espera' && golpeRef.current(), reduz ? 0 : 350)
@@ -159,6 +162,7 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
       /* sem storage */
     }
     aoAbrir()
+    window.dispatchEvent(new Event('omn:aberto'))
     // depois do carimbo, leva direto ao abaixo-assinado (sem precisar tocar em "Explorar")
     setTimeout(() => rolarPara('assine'), reduz ? 200 : 450)
   }, [aoAbrir, reduz])
@@ -223,14 +227,16 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
   }
 
   /* ---------- paralaxe depois de aberto ---------- */
-  const { scrollY } = useScroll()
+  const scrollY = useRolagemY()
   const yFoto = useTransform(scrollY, [0, 900], [0, reduz ? 0 : 160])
   const escalaFoto = useTransform(scrollY, [0, 900], [1, reduz ? 1 : 1.12])
   const yTitulo = useTransform(scrollY, [0, 700], [0, reduz ? 0 : -110])
   const opTitulo = useTransform(scrollY, [0, 520], [1, 0])
 
   const abertoAgora = fase === 'aberto'
-  const barra = abertoAgora ? '0svh' : fase === 'golpe' ? '12svh' : '8svh'
+  // barras com altura fixa (50.5svh) que deslizam: transform não recalcula o layout a cada quadro
+  const visivel = abertoAgora ? 0 : fase === 'golpe' ? 12 : 8
+  const desliza = `${-((1 - visivel / 50.5) * 100).toFixed(2)}%`
 
   return (
     <section
@@ -331,9 +337,9 @@ export function Abertura({ aberto, aoAbrir }: { aberto: boolean; aoAbrir: () => 
         <m.div
           key={lado}
           aria-hidden
-          className={`absolute inset-x-0 z-20 overflow-hidden bg-black ${lado === 'top' ? 'top-0' : 'bottom-0'}`}
-          initial={aberto ? false : { height: '50.5svh' }}
-          animate={{ height: barra }}
+          className={`absolute inset-x-0 z-20 h-[50.5svh] overflow-hidden bg-black will-change-transform ${lado === 'top' ? 'top-0' : 'bottom-0'}`}
+          initial={aberto ? { y: lado === 'top' ? '-100%' : '100%' } : { y: '0%' }}
+          animate={{ y: lado === 'top' ? desliza : desliza.replace('-', '') }}
           transition={{ duration: abertoAgora ? 1.1 : 1.5, ease: EASE_CINEMA, delay: fase === 'espera' ? 0.15 : 0 }}
         >
           <m.div

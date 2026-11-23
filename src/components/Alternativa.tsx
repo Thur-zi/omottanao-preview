@@ -1,8 +1,8 @@
 import { useRef } from 'react'
-import { m, useScroll, useTransform } from 'motion/react'
+import { m, useTransform } from 'motion/react'
 import { CONFIG } from '../config'
 import { CANDIDATO, PAUTAS } from '../data/conteudo'
-import { EASE, Surge, TituloRevela, rolarPara } from '../lib/movimento'
+import { EASE, Surge, TituloRevela, rolarPara, useProgressoSecao } from '../lib/movimento'
 import { linkWhatsapp, temWhatsapp } from '../lib/rastreio'
 import { Stamp } from 'lucide-react'
 import { useConteudo } from '../lib/conteudo'
@@ -13,12 +13,12 @@ const BASE = import.meta.env.BASE_URL
 export function Alternativa() {
   useConteudo()
   const ref = useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
+  const scrollYProgress = useProgressoSecao(ref, ['start end', 'end start'])
   const yFoto = useTransform(scrollYProgress, [0, 1], [60, -60])
   const yPalavra = useTransform(scrollYProgress, [0, 1], ['10%', '-30%'])
 
   return (
-    <section id="alternativa" ref={ref} className="arco z-40 overflow-hidden bg-[linear-gradient(160deg,#0E2E9A_0%,#081A52_55%,#040B26_100%)] py-24 text-white sm:py-36">
+    <section id="alternativa" ref={ref} className="arco fora-da-tela z-40 overflow-hidden bg-[linear-gradient(160deg,#0E2E9A_0%,#081A52_55%,#040B26_100%)] py-24 text-white sm:py-36">
       <m.div aria-hidden style={{ y: yPalavra }} className="display pointer-events-none absolute -right-[4vw] top-0 select-none text-[34vw] leading-none text-white/[0.04]">
         22
       </m.div>

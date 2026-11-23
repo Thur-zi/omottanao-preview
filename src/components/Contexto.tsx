@@ -1,8 +1,8 @@
 /* Arquivada: aparece só com Painel → Arquivo → "Como funciona" ligado. */
 import { useRef } from 'react'
-import { m, useScroll, useSpring, useTransform } from 'motion/react'
+import { m, useSpring, useTransform } from 'motion/react'
 import { LETREIRO } from '../data/conteudo'
-import { EASE, NumeroAnimado, Surge, TituloRevela } from '../lib/movimento'
+import { EASE, NumeroAnimado, Surge, TituloRevela, useProgressoSecao } from '../lib/movimento'
 
 export function Letreiro({ escuro = true }: { escuro?: boolean }) {
   const itens = [...LETREIRO, ...LETREIRO]
@@ -34,7 +34,7 @@ const PASSOS = [
 
 export function Contexto() {
   const trilho = useRef<HTMLOListElement>(null)
-  const { scrollYProgress } = useScroll({ target: trilho, offset: ['start 0.8', 'end 0.6'] })
+  const scrollYProgress = useProgressoSecao(trilho, ['start 0.8', 'end 0.6'])
   const linha = useSpring(useTransform(scrollYProgress, [0, 1], [0, 1]), { stiffness: 90, damping: 24 })
 
   return (

@@ -118,11 +118,15 @@ export class CenaCarimbo {
     this.renderer.toneMappingExposure = 0.92
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
-    const pmrem = new THREE.PMREMGenerator(this.renderer)
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
-    pmrem.dispose()
+    // reflexos de ambiente (PMREM) só no computador: no celular é a etapa mais cara e trava a abertura
+    if (!grosso) {
+      const pmrem = new THREE.PMREMGenerator(this.renderer)
+      this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+      pmrem.dispose()
+    }
 
-    this.scene.add(new THREE.HemisphereLight('#ffffff', '#c61f1f', 0.9))
+    this.scene.add(new THREE.HemisphereLight('#ffffff', '#c61f1f', grosso ? 1.6 : 0.9))
+    if (grosso) this.scene.add(new THREE.AmbientLight('#ffe9d2', 0.55))
     const chave = new THREE.DirectionalLight('#ffffff', 2.4)
     chave.position.set(-4, 6, 8)
     this.scene.add(chave)
@@ -142,7 +146,19 @@ export class CenaCarimbo {
     this.ro = new ResizeObserver(() => this.redimensionar())
     this.ro.observe(canvas.parentElement ?? canvas)
     this.redimensionar()
+
+    // prepara os shaders em segundo plano (KHR_parallel_shader_compile) antes de o carimbo aparecer
+    this.externo.visible = true
+    this.pronto = this.renderer
+      .compileAsync(this.scene, this.camera)
+      .catch(() => undefined)
+      .finally(() => {
+        if (this.estado === 'oculto') this.externo.visible = false
+      })
   }
+
+  /** Resolve quando os shaders estão prontos (aparecer sem engasgo). */
+  pronto: Promise<unknown>
 
   private redimensionar() {
     const el = this.canvas.parentElement ?? this.canvas

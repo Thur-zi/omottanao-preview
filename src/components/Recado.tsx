@@ -113,7 +113,7 @@ export function Recado() {
   }
 
   return (
-    <section id="recado" className="arco z-[15] bg-papel py-24 sm:py-32">
+    <section id="recado" className="arco fora-da-tela z-[15] bg-papel py-24 sm:py-32">
       <div className="container">
         <Surge>
           <span className="rotulo text-azul">Gere seu card</span>

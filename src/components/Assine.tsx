@@ -240,7 +240,7 @@ export function Assine() {
   const infoUf = uf ? resumo(uf) : null
 
   return (
-    <section id="assine" className="arco relative z-10 overflow-hidden bg-azul-fundo pb-24 pt-24 text-white sm:pb-32 sm:pt-32">
+    <section id="assine" className="arco fora-da-tela relative z-10 overflow-hidden bg-azul-fundo pb-24 pt-24 text-white sm:pb-32 sm:pt-32">
       {/* fundo: brilho, grade e palavra gigante */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_85%_25%,rgba(31,79,224,0.32),transparent_70%),radial-gradient(45%_40%_at_5%_95%,rgba(61,123,255,0.14),transparent_70%)]" />
