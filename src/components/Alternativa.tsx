@@ -86,7 +86,7 @@ export function Alternativa() {
               <b className="text-white">{CANDIDATO.nome}</b> está na disputa pela Presidência da Câmara. Para a direita não entregar a Casa ao candidato que o PT apoia.
             </p>
           </Surge>
-          <ul className="mt-10 grid gap-3 sm:grid-cols-2">
+          <ul className="mt-10 grid gap-3 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
             {PAUTAS.map((p, i) => {
               const [titulo, detalhe] = p.titulo.split(' · ')
               return (

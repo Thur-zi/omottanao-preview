@@ -46,10 +46,11 @@ export const MOTIVOS: Motivo[] = [
 
 /** "Título · detalhe" (o detalhe é opcional). Editável no painel. */
 export const PAUTAS: { titulo: string; exemplo?: boolean }[] = [
-  { titulo: 'Voto de desconfiança · Projeto dele: o plenário pode afastar quem comanda a Mesa e descumpre o combinado.' },
-  { titulo: 'Congresso que decide · A Câmara não pode ser carimbadora do que meia dúzia de líderes já fechou.' },
-  { titulo: 'Freio no ativismo judicial · Regras para decisões que suspendem leis aprovadas pelo Congresso.' },
-  { titulo: 'Emenda sem chantagem · Proposta proíbe o governo de interferir nas emendas dos deputados.' },
+  { titulo: "Justiça e Estado de Direito · Reformar o Judiciário, restabelecer o equilíbrio entre os Poderes, recuperar as prerrogativas do Congresso Nacional, avançar na anistia do 8 de janeiro e retomar o combate à corrupção." },
+  { titulo: "Representatividade Política · Reformar o sistema eleitoral, implementar o voto distrital misto, corrigir as distorções na representação dos estados e aproximar os parlamentares dos cidadãos." },
+  { titulo: "Liberdade Econômica e Responsabilidade Fiscal · Reverter os aumentos tributários desde 2022, reduzir impostos e gastos públicos, restabelecer o teto de gastos e combater o desperdício de recursos dos contribuintes." },
+  { titulo: "Federalismo e Autonomia dos Estados · Descentralizar o poder concentrado em Brasília, ampliar a autonomia jurídica, legislativa e tributária dos estados e reformar a distribuição de recursos entre os entes federativos." },
+  { titulo: "Soberania, Defesa e Segurança Nacional · Fortalecer a indústria de defesa, combater o crime organizado e os cartéis transnacionais, proteger as fronteiras e revisar as políticas de imigração, atuação e financiamento de ONGs." },
 ]
 
 export const LETREIRO = ['O Motta não', 'Voto secreto', '257 votos', '1º de fevereiro', 'Cobre seu deputado', 'Direita com candidato próprio']

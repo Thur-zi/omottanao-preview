@@ -118,8 +118,8 @@ function Formulario({ tipo, item, fechar, salvo }: { tipo: Tipo; item: Item | nu
           </>
         )}
         {tipo === 'pautas' && (
-          <Campo rotulo="Pauta">
-            <input className={entrada} value={String(v.titulo ?? '')} onChange={set('titulo')} maxLength={70} required />
+          <Campo rotulo="Pauta" dica='Título · explicação. Ex.: "Justiça e Estado de Direito · Reformar o Judiciário…" (o que vem depois do " · " aparece menor, embaixo).'>
+            <textarea className={`${entrada} h-28 py-2.5`} value={String(v.titulo ?? '')} onChange={set('titulo')} maxLength={400} required />
           </Campo>
         )}
         {tipo !== 'pautas' && (

@@ -280,7 +280,7 @@ const TABELAS: Record<string, { campos: Campo[]; ordem?: boolean }> = {
       { nome: 'ativo', tipo: 'bool' },
     ],
   },
-  pautas: { ordem: true, campos: [{ nome: 'titulo', max: 70, obrigatorio: true }, { nome: 'ativo', tipo: 'bool' }] },
+  pautas: { ordem: true, campos: [{ nome: 'titulo', max: 400, obrigatorio: true }, { nome: 'ativo', tipo: 'bool' }] },
 }
 
 function validarCampos(tabela: string, b: Record<string, unknown>, parcial: boolean) {
