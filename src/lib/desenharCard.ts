@@ -1,7 +1,7 @@
 /** Desenha o card "Cobre o seu deputado" num canvas (roda 100% no aparelho). */
 
 export type Formato = 'feed' | 'status'
-export type DadosCard = { deputado: string; nome: string; uf: string; frase: number; formato: Formato; site: string; foto?: HTMLImageElement | null; partido?: string }
+export type DadosCard = { deputado: string; nome: string; uf: string; frase: number; formato: Formato; site: string; foto?: HTMLImageElement | null; partido?: string; ufDeputado?: string }
 
 export const FRASES = [
   (d: string) => ['Eu votei em você,', `${d}.`, 'Não votei pra', 'eleger o Motta.'],
@@ -126,7 +126,7 @@ export function desenharCard(cv: HTMLCanvasElement, img: HTMLImageElement | null
       g.font = '800 26px "Inter Tight Variable", "Inter Tight", Inter, sans-serif'
       g.textAlign = 'center'
       g.textBaseline = 'middle'
-      g.fillText(`${d.partido} · ${d.uf || ''}`.replace(/ · $/, ''), 0, fh / 2 + 22)
+      g.fillText(`${d.partido} · ${d.ufDeputado || d.uf || ''}`.replace(/ · $/, ''), 0, fh / 2 + 22)
     }
     g.restore()
   }

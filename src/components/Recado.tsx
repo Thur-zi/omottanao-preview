@@ -68,7 +68,7 @@ export function Recado() {
   useEffect(() => {
     if (!tela.current) return
     const t = setTimeout(() => {
-      desenharCard(tela.current!, img.current, { deputado, nome, uf, frase, formato, site: CONFIG.site, foto: fotoDep.current, partido: depSel?.partido })
+      desenharCard(tela.current!, img.current, { deputado, nome, uf, frase, formato, site: CONFIG.site, foto: fotoDep.current, partido: depSel?.partido, ufDeputado: depSel?.uf })
       // a imagem já fica pronta: no toque, o compartilhar abre na hora (o iPhone exige isso)
       pronta.current = null
       tela.current?.toBlob((b) => (pronta.current = b), 'image/png')
@@ -103,7 +103,9 @@ export function Recado() {
   }
   /** Manda o card no WhatsApp: no celular abre o compartilhar com a imagem (é só tocar no WhatsApp); no computador baixa a imagem e abre o WhatsApp Web. */
   async function compartilhar() {
-    const texto = `Eu votei no meu deputado, mas não foi pra eleger o Motta. Peça coerência você também: https://${CONFIG.site}`
+    const texto = deputado
+      ? `Eu votei em ${deputado}. Não votei pra eleger o Motta. Peça coerência você também: https://${CONFIG.site}`
+      : `Eu votei no meu deputado, mas não foi pra eleger o Motta. Peça coerência você também: https://${CONFIG.site}`
     rastrear('compartilhar', { local: 'card', formato, uf })
     const b = pronta.current ?? (await blob())
     if (!b) return
