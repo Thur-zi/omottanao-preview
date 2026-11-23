@@ -13,7 +13,7 @@ import { Combobox, type Opcao } from './Combobox'
 import { useContagem } from '../lib/contagem'
 import { definirUF, useUF } from '../lib/estado'
 import { EASE, Surge, TituloRevela, rolarPara } from '../lib/movimento'
-import { linkWhatsapp, pixelLead, rastrear } from '../lib/rastreio'
+import { linkWhatsapp, pixelLead, rastrear, temWhatsapp } from '../lib/rastreio'
 import { IconeWhatsapp } from './Icones'
 import { Impressao } from './Marca'
 
@@ -446,12 +446,17 @@ export function Assine() {
                         <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 transition peer-focus-visible:ring-4 peer-focus-visible:ring-azul/25 ${lgpd ? 'border-azul bg-azul text-white' : erros.lgpd ? 'border-vermelho' : 'border-azul-tinta/25'}`}>
                           {lgpd && <Check size={15} strokeWidth={3.5} />}
                         </span>
+                        {/* mesmo texto de TEXTO_CONSENTIMENTO (o que vai para o servidor), com os links */}
                         <span>
-                          {TEXTO_CONSENTIMENTO.replace('Política de Privacidade', '')}
+                          Aceito os{' '}
+                          <a href={`${BASE}termos.html`} target="_blank" rel="noopener" className="font-bold text-azul underline-offset-2 hover:underline">
+                            Termos de Uso
+                          </a>{' '}
+                          e autorizo o tratamento do meu nome, WhatsApp, estado e cidade, e do meu apoio a esta mobilização, para receber comunicações dela pelo WhatsApp, conforme a{' '}
                           <a href={`${BASE}privacidade.html`} target="_blank" rel="noopener" className="font-bold text-azul underline-offset-2 hover:underline">
-                            Ver política
+                            Política de Privacidade
                           </a>
-                          .
+                          . Posso cancelar quando quiser.
                         </span>
                       </label>
                       <AnimatePresence>
@@ -553,9 +558,9 @@ export function Assine() {
                       {/* arquivado: Painel → Arquivo → "Botões de WhatsApp na confirmação" */}
                       {CONFIG.mostrarBotoesWhatsapp && (
                         <>
-                          <a className="btn-zap mt-4 h-14 w-full text-[16px]" href={linkWhatsapp('confirmacao', feito.uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:confirmacao">
+                          {temWhatsapp() && <a className="btn-zap mt-4 h-14 w-full text-[16px]" href={linkWhatsapp('confirmacao', feito.uf)} target="_blank" rel="noopener" data-rastreio="whatsapp_click:confirmacao">
                             <IconeWhatsapp /> Entrar no WhatsApp do Luiz
-                          </a>
+                          </a>}
                           <a
                             className="btn-linha mt-3 h-12 w-full text-[14px] text-white"
                             href={`https://wa.me/?text=${encodeURIComponent(`Assinei o NÃO ao Motta. Assine também: https://${CONFIG.site}`)}`}

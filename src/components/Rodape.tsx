@@ -3,6 +3,7 @@ import { AnimatePresence, m } from 'motion/react'
 import { Share2, Stamp } from 'lucide-react'
 import { CONFIG } from '../config'
 import { TituloRevela, rolarPara } from '../lib/movimento'
+import { telefoneBonito } from '../lib/rastreio'
 import { useConteudo } from '../lib/conteudo'
 import { Impressao, Logo } from './Marca'
 
@@ -29,7 +30,7 @@ export function Rodape() {
             </button>
             <a
               className="btn h-16 border-2 border-white/80 px-8 text-[17px] text-white hover:bg-white hover:text-vermelho"
-              href={`https://wa.me/?text=${encodeURIComponent(`O Motta não. Veja quem já disse NÃO e cobre o seu deputado: https://${CONFIG.site}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`O voto é secreto. A cobrança, não. Peça coerência ao deputado em quem você votou: https://${CONFIG.site}`)}`}
               target="_blank"
               rel="noopener"
               data-rastreio="compartilhar:fechamento"
@@ -49,8 +50,8 @@ export function Rodape() {
           <Logo className="text-[26px] text-white" />
           <div className="space-y-2 sm:px-6">
             <p>
-              Iniciativa de apoiadores da candidatura de Luiz Philippe de Orleans e Bragança à Presidência da Câmara dos Deputados. Responsável:{' '}
-              <b className="text-white">{CONFIG.responsavel}</b>.
+              Mobilização independente de eleitores e apoiadores da candidatura de Luiz Philippe de Orleans e Bragança à Presidência da Câmara dos Deputados. Não é propaganda
+              eleitoral nem tem relação com partido ou com a Câmara. Responsável: <b className="text-white">{CONFIG.responsavel}</b>.
             </p>
             <p>Ilustração produzida a partir de foto pública, com tratamento gráfico em estêncil. Informações com fonte jornalística indicada. Mapa e municípios: IBGE. Deputados eleitos e fotos: TSE (dados abertos, eleição 2026). Foto do Luiz Philippe: Câmara dos Deputados (CC BY 3.0).</p>
           </div>
@@ -58,11 +59,14 @@ export function Rodape() {
             <a href={`${BASE}privacidade.html`} className="block font-bold text-white hover:underline">
               Política de Privacidade
             </a>
-            <p>
-              Encarregado (LGPD): {CONFIG.encarregado.nome}
+            <a href={`${BASE}termos.html`} className="block font-bold text-white hover:underline">
+              Termos de Uso
+            </a>
+            <p className="pt-1">
+              Contato e pedidos sobre seus dados:
               <br />
-              <a href={`mailto:${CONFIG.encarregado.email}`} className="text-white hover:underline">
-                {CONFIG.encarregado.email}
+              <a href={`https://wa.me/${CONFIG.contatoTelefone}`} target="_blank" rel="noopener" className="font-semibold text-white hover:underline">
+                WhatsApp {telefoneBonito(CONFIG.contatoTelefone)}
               </a>
             </p>
           </div>

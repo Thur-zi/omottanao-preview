@@ -7,8 +7,12 @@ import { CONFIG } from '../config'
 import { ORIGEM, SESSAO } from './rastreio'
 import type { UF } from '../data/votometro'
 
+/**
+ * Texto aceito na caixinha (vai para o servidor com a versão). Apoiar a mobilização revela opinião política,
+ * dado sensível na LGPD (art. 5º, II): o consentimento é específico e destacado (art. 11, I).
+ */
 export const TEXTO_CONSENTIMENTO =
-  'Autorizo o uso do meu nome, WhatsApp e estado para receber comunicações desta mobilização por WhatsApp, conforme a Política de Privacidade. Posso cancelar a qualquer momento.'
+  'Aceito os Termos de Uso e autorizo o tratamento do meu nome, WhatsApp, estado e cidade, e do meu apoio a esta mobilização, para receber comunicações dela pelo WhatsApp, conforme a Política de Privacidade. Posso cancelar quando quiser.'
 
 export type Lead = { nome: string; sobrenome: string; whatsapp: string; uf: UF; cidade: { codigo_ibge: number; nome: string } }
 

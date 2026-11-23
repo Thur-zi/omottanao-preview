@@ -1,17 +1,100 @@
 import { useEffect, useState } from 'react'
-import { Check, Copy, Link2, Save, ShieldOff, Trash2, UserPlus } from 'lucide-react'
+import { Check, Copy, KeyRound, Link2, Save, Send, ShieldOff, Trash2, UserPlus, Webhook } from 'lucide-react'
 import { ErroApi, api, dataHora } from './api'
 import { Aviso, Botao, Campo, Cartao, Janela, Vazio, entrada } from './ui'
 
 const CAMPOS: [string, string, string?][] = [
-  ['whatsapp_numero', 'WhatsApp do Luiz (WABA)', '55 + DDD + número. Ex.: 5561999990000'],
-  ['ga4_id', 'Google Analytics 4', 'Formato G-XXXXXXX'],
+  ['whatsapp_numero', 'WhatsApp dos botões', '55 + DDD + número (o da API oficial). Vazio = os botões de WhatsApp somem do site.'],
+  ['responsavel', 'Responsável (rodapé e política)', 'Como a iniciativa aparece para o público.'],
+  ['contato_telefone', 'Contato do responsável (LGPD)', '55 + DDD + número. Aparece no rodapé e é o canal para pedidos sobre dados.'],
   ['meta_pixel_id', 'Pixel da Meta', 'Só números'],
-  ['responsavel', 'Responsável (rodapé)', 'Nome e CNPJ de quem responde pela página'],
-  ['encarregado_nome', 'Encarregado de dados (LGPD)'],
-  ['encarregado_email', 'E-mail do encarregado'],
-  ['candidato_foto', 'Foto do Luiz Philippe (link)', 'https://… imagem 4:5. Deixe vazio para mostrar o espaço da foto'],
+  ['ga4_id', 'Google Analytics 4', 'Formato G-XXXXXXX (opcional)'],
+  ['candidato_foto', 'Foto do Luiz Philippe (link)', 'https://… imagem 4:5. Vazio = foto oficial da Câmara'],
 ]
+
+type UltimaEntrega = { quando: string; evento: string; status: number; ms: number; resposta: string }
+
+/** Automação do WhatsApp: a cada assinatura, o site faz um POST para este endereço. */
+function Automacao({ cfg, setCfg, salvar }: { cfg: Record<string, string>; setCfg: (c: Record<string, string>) => void; salvar: (e: React.FormEvent) => Promise<void> }) {
+  const [teste, setTeste] = useState<{ t: 'ok' | 'erro'; m: string } | null>(null)
+  const [testando, setTestando] = useState(false)
+  let ultima: UltimaEntrega | null = null
+  try {
+    ultima = cfg.webhook_ultimo ? (JSON.parse(cfg.webhook_ultimo) as UltimaEntrega) : null
+  } catch {
+    ultima = null
+  }
+  const gerarSegredo = () => {
+    const b = new Uint8Array(24)
+    crypto.getRandomValues(b)
+    setCfg({ ...cfg, webhook_segredo: [...b].map((x) => x.toString(16).padStart(2, '0')).join('') })
+  }
+  async function testar() {
+    setTeste(null)
+    setTestando(true)
+    try {
+      const r = await api<{ ok: boolean; status: number; ms: number; resposta: string }>('webhook/testar', { corpo: {} })
+      setTeste({ t: r.ok ? 'ok' : 'erro', m: r.ok ? `Entregue: resposta ${r.status} em ${r.ms} ms.` : `A automação respondeu ${r.status || 'sem resposta'}${r.resposta ? `: ${r.resposta}` : ''}` })
+    } catch (er) {
+      setTeste({ t: 'erro', m: (er as ErroApi).motivo })
+    } finally {
+      setTestando(false)
+    }
+  }
+  return (
+    <Cartao titulo="Automação do WhatsApp" sub="A cada assinatura confirmada, o site envia os dados para este endereço (n8n, Make, CRM ou a API oficial).">
+      <form onSubmit={salvar} className="space-y-3">
+        <Campo rotulo="Endereço (webhook)" dica="https://… · vazio = desligado">
+          <input className={entrada} placeholder="https://" value={cfg.webhook_url ?? ''} onChange={(e) => setCfg({ ...cfg, webhook_url: e.target.value.trim() })} />
+        </Campo>
+        <Campo rotulo="Segredo da assinatura" dica="O site assina cada envio (cabeçalho x-omn-assinatura: sha256=…) para a automação conferir que veio daqui.">
+          <div className="flex gap-2">
+            <input className={`${entrada} font-mono text-[13px]`} type="password" autoComplete="off" value={cfg.webhook_segredo ?? ''} onChange={(e) => setCfg({ ...cfg, webhook_segredo: e.target.value })} />
+            <Botao type="button" variante="linha" onClick={gerarSegredo} title="Gerar um segredo aleatório">
+              <KeyRound size={15} />
+            </Botao>
+          </div>
+        </Campo>
+        <div className="flex flex-wrap gap-2">
+          <Botao type="submit">
+            <Save size={15} /> Salvar
+          </Botao>
+          <Botao type="button" variante="linha" onClick={testar} disabled={testando || !cfg.webhook_url}>
+            <Send size={15} /> {testando ? 'Enviando…' : 'Enviar teste'}
+          </Botao>
+        </div>
+        {teste && <Aviso tipo={teste.t}>{teste.m}</Aviso>}
+        <p className="flex items-start gap-2 text-[12.5px] text-azul-tinta/60">
+          <Webhook size={14} className="mt-0.5 shrink-0" />
+          {ultima ? (
+            <span>
+              Última entrega: {dataHora(ultima.quando)} · {ultima.evento} · {ultima.status ? `resposta ${ultima.status}` : 'sem resposta'} · {ultima.ms} ms
+            </span>
+          ) : (
+            <span>Nenhuma entrega ainda.</span>
+          )}
+        </p>
+        <details className="text-[12.5px] text-azul-tinta/65">
+          <summary className="cursor-pointer font-semibold">O que é enviado</summary>
+          <pre className="mt-2 overflow-x-auto rounded-lg bg-azul-tinta/[0.04] p-3 text-[11.5px] leading-snug">{`POST (JSON) · cabeçalhos x-omn-evento e x-omn-assinatura
+{
+  "evento": "assinatura.nova" | "assinatura.repetida" | "teste",
+  "enviado_em": "2026-11-23T15:00:00.000Z",
+  "site": "omottanao.com.br",
+  "assinatura": {
+    "nome", "sobrenome", "nome_completo",
+    "whatsapp": "5531999999999",
+    "uf": "MG", "cidade", "cidade_ibge",
+    "segmento": "uf_MG", "vezes": 1,
+    "consentimento": { "aceito": true, "versao", "data_hora" },
+    "origem": { "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "referrer" }
+  }
+}`}</pre>
+        </details>
+      </form>
+    </Cartao>
+  )
+}
 
 export function AbaConfig() {
   const [cfg, setCfg] = useState<Record<string, string> | null>(null)
@@ -74,6 +157,7 @@ export function AbaConfig() {
         </form>
       </Cartao>
       <div className="space-y-5">
+        <Automacao cfg={cfg} setCfg={setCfg} salvar={salvar} />
         <Cartao titulo="Dados de exemplo" sub="Itens fictícios que a prévia usa para mostrar o funcionamento.">
           {exemplos ? (
             <>

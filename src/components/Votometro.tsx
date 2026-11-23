@@ -6,7 +6,7 @@ import { CADEIRAS, NOMES_UF, UFS, intensidade, resumo, totais, type Registro, ty
 import { carregarConteudo, useConteudo } from '../lib/conteudo'
 import { definirUF, useUF } from '../lib/estado'
 import { EASE, NumeroAnimado, Surge, TituloRevela, rolarPara } from '../lib/movimento'
-import { linkWhatsapp, rastrear } from '../lib/rastreio'
+import { linkWhatsapp, rastrear, temWhatsapp } from '../lib/rastreio'
 import type { CenaMapa, DadosMapa } from '../three/mapa'
 
 const BASE = import.meta.env.BASE_URL
@@ -193,7 +193,7 @@ function PainelTriplo({ uf, fechar }: { uf: UF; fechar: () => void }) {
         >
           <Send size={17} className="shrink-0" /> Mandar meu recado
         </button>
-        <a
+        {temWhatsapp() && <a
           className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white/10"
           href={linkWhatsapp('fonte', uf)}
           target="_blank"
@@ -203,7 +203,7 @@ function PainelTriplo({ uf, fechar }: { uf: UF; fechar: () => void }) {
           title="Enviar a fonte de um posicionamento"
         >
           <MessageCircle size={19} />
-        </a>
+        </a>}
       </div>
     </m.div>
   )
@@ -437,10 +437,14 @@ export function Votometro() {
           })}
         </div>
         <p className="mt-8 max-w-[70ch] text-[14px] leading-relaxed text-white/50">
-          Viu um deputado eleito se posicionar?{' '}
-          <a href={linkWhatsapp('fonte')} target="_blank" rel="noopener" className="font-bold text-white underline underline-offset-4" data-rastreio="whatsapp_click:fonte">
-            Mande a fonte pra gente.
-          </a>{' '}
+          {temWhatsapp() && (
+            <>
+              Viu um deputado eleito se posicionar?{' '}
+              <a href={linkWhatsapp('fonte')} target="_blank" rel="noopener" className="font-bold text-white underline underline-offset-4" data-rastreio="whatsapp_click:fonte">
+                Mande a fonte pra gente.
+              </a>{' '}
+            </>
+          )}
           Contamos posições individuais e públicas. O voto é secreto: apoio formal de partido não garante o voto do deputado.
         </p>
       </div>

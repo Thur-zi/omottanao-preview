@@ -176,6 +176,15 @@ export function iniciarRastreio() {
   setTimeout(observar, 5000)
 }
 
+/** Há número de WhatsApp configurado? (sem ele, os botões de WhatsApp não aparecem) */
+export const temWhatsapp = () => /^55\d{10,11}$/.test(CONFIG.whatsappNumero)
+
+/** +55 (11) 99190-2724 */
+export function telefoneBonito(n: string) {
+  const d = n.replace(/\D/g, '').replace(/^55/, '')
+  return d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : d.length === 10 ? `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}` : n
+}
+
 export function linkWhatsapp(contexto: 'alternativa' | 'confirmacao' | 'fonte' | 'geral', uf?: UF) {
   const u = uf ?? ORIGEM.uf
   const textos = {

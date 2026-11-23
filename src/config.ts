@@ -13,11 +13,12 @@ export const CONFIG = {
   eventos: TEM_API ? '/api/eventos' : (null as string | null),
   conteudo: TEM_API ? '/api/conteudo' : (null as string | null),
   /** Número WABA do Luiz: DDI + DDD + número, só dígitos. */
-  whatsappNumero: '55XXXXXXXXXXX',
+  /** WhatsApp dos botões (API oficial). Vazio = botões de WhatsApp escondidos. Vem do painel. */
+  whatsappNumero: '',
   ga4Id: null as string | null,
   /** Pixel da Meta (o painel pode trocar). */
   metaPixelId: '2121776075436409' as string | null,
-  versaoConsentimento: 'lgpd-v1-2026-11-18',
+  versaoConsentimento: 'lgpd-v2-2026-11-23',
   site: 'omottanao.com.br',
   /** Mostra os selos "dado de exemplo" enquanto houver dados fictícios. */
   previa: true,
@@ -34,8 +35,9 @@ export const CONFIG = {
   avisoTexto: 'o PL decide nos próximos dias se apoia Motta ou lança candidato próprio.',
   /** Botões de WhatsApp / gerar card / chamar amigos na confirmação (arquivados). */
   mostrarBotoesWhatsapp: false,
-  responsavel: '[NOME / CNPJ DO RESPONSÁVEL]',
-  encarregado: { nome: '[NOME DO ENCARREGADO]', email: '[EMAIL]' },
+  responsavel: 'Coordenação da mobilização O Motta Não',
+  /** Contato do responsável e canal para pedidos sobre dados (LGPD). */
+  contatoTelefone: '5511991902724',
   /** Foto do candidato; o painel pode trocar. Padrão: foto oficial da Câmara (CC BY 3.0). */
   candidatoFoto: null as string | null,
 }

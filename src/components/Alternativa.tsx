@@ -2,8 +2,9 @@ import { useRef } from 'react'
 import { m, useScroll, useTransform } from 'motion/react'
 import { CONFIG } from '../config'
 import { CANDIDATO, PAUTAS } from '../data/conteudo'
-import { EASE, Surge, TituloRevela } from '../lib/movimento'
-import { linkWhatsapp } from '../lib/rastreio'
+import { EASE, Surge, TituloRevela, rolarPara } from '../lib/movimento'
+import { linkWhatsapp, temWhatsapp } from '../lib/rastreio'
+import { Stamp } from 'lucide-react'
 import { useConteudo } from '../lib/conteudo'
 import { IconeWhatsapp } from './Icones'
 
@@ -101,9 +102,16 @@ export function Alternativa() {
             })}
           </ul>
           <Surge atraso={0.4} className="mt-10">
-            <a data-sem-barra className="btn-zap w-full whitespace-normal px-5 text-center text-[15px] leading-tight sm:w-auto sm:px-8 sm:text-[17px]" href={linkWhatsapp('alternativa')} target="_blank" rel="noopener" data-rastreio="whatsapp_click:alternativa">
-              <IconeWhatsapp /> Fale com o Luiz no WhatsApp
-            </a>
+            {/* sem número da API oficial configurado no painel, o botão leva ao abaixo-assinado */}
+            {temWhatsapp() ? (
+              <a data-sem-barra className="btn-zap w-full whitespace-normal px-5 text-center text-[15px] leading-tight sm:w-auto sm:px-8 sm:text-[17px]" href={linkWhatsapp('alternativa')} target="_blank" rel="noopener" data-rastreio="whatsapp_click:alternativa">
+                <IconeWhatsapp /> Fale com o Luiz no WhatsApp
+              </a>
+            ) : (
+              <button type="button" data-sem-barra onClick={() => rolarPara('assine')} className="btn-branco w-full px-6 text-[16px] sm:w-auto sm:px-9 sm:text-[17px]" data-rastreio="cta:alternativa">
+                <Stamp size={20} /> Eu quero coerência
+              </button>
+            )}
           </Surge>
         </div>
       </div>

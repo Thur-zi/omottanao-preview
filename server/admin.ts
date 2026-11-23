@@ -3,6 +3,7 @@
  * exceto o próprio login. Ações sensíveis vão para a auditoria.
  */
 import { codigoValido, hashSenha, iguais, novoSegredo, uriTotp } from './seguranca'
+import { configWebhook, corpoWebhook, enviarWebhook } from './webhook'
 import { UFS, agora, aleatorio, corpo, csv, dentroDoLimite, erro, ipHash, json, limpa, sha256, urlOk, type Ctx, type Env } from './util'
 
 type Admin = { id: number; usuario: string; nome: string; senha_hash: string; senha_sal: string; totp_secret: string | null; totp_ativo: number; ativo: number }
@@ -381,7 +382,7 @@ async function conteudo(req: Request, env: Env, auth: Auth, tabela: string, id: 
 /* Roteador                                                           */
 /* ------------------------------------------------------------------ */
 
-const CONFIG_CHAVES = ['whatsapp_numero', 'ga4_id', 'meta_pixel_id', 'responsavel', 'encarregado_nome', 'encarregado_email', 'candidato_foto', 'previa', 'mostrar_contagem', 'mostrar_info_estado', 'mostrar_votometro', 'mostrar_como_funciona', 'mostrar_aviso', 'aviso_texto', 'mostrar_botoes_whatsapp']
+const CONFIG_CHAVES = ['whatsapp_numero', 'ga4_id', 'meta_pixel_id', 'responsavel', 'encarregado_nome', 'encarregado_email', 'candidato_foto', 'previa', 'mostrar_contagem', 'mostrar_info_estado', 'mostrar_votometro', 'mostrar_como_funciona', 'mostrar_aviso', 'aviso_texto', 'mostrar_botoes_whatsapp', 'contato_telefone', 'webhook_url', 'webhook_segredo']
 
 export async function rotaAdmin(ctx: Ctx): Promise<Response> {
   const { request: req, env } = ctx
@@ -475,6 +476,8 @@ export async function rotaAdmin(ctx: Ctx): Promise<Response> {
         if (k === 'whatsapp_numero' && s && !/^55\d{10,11}$/.test(s.replace(/\D/g, ''))) return erro('WhatsApp no formato 55 + DDD + número.')
         if (k === 'ga4_id' && s && !/^G-[A-Z0-9]{4,15}$/.test(s)) return erro('ID do GA4 no formato G-XXXXXXX.')
         if (k === 'meta_pixel_id' && s && !/^\d{6,20}$/.test(s)) return erro('O Pixel da Meta é só número.')
+        if (k === 'webhook_url' && s && !/^https:\/\/[^\s]+$/i.test(s)) return erro('O endereço da automação precisa começar com https://')
+        if (k === 'contato_telefone' && s && !/^55\d{10,11}$/.test(s.replace(/\D/g, ''))) return erro('Telefone no formato 55 + DDD + número.')
       }
       await env.DB.batch(
         pares.map(([k, v]) =>
@@ -536,6 +539,19 @@ export async function rotaAdmin(ctx: Ctx): Promise<Response> {
       return json({ ok: true })
     }
   }
+  /* ---- automação (webhook) ---- */
+  if (r0 === 'webhook' && r1 === 'testar' && metodo === 'POST') {
+    const wh = await configWebhook(env.DB)
+    if (!wh.url) return erro('Salve primeiro o endereço da automação (https://…).')
+    const corpoTeste = corpoWebhook('teste', {
+      nome: 'Teste', sobrenome: 'do Painel', whatsapp: '5500000000000', uf: 'SP', cidade: 'São Paulo', cidade_ibge: 3550308,
+      versao_termo: 'teste', aceite_em: agora(), vezes: 1, origem: { utm_source: 'painel' },
+    })
+    const r = await enviarWebhook(env.DB, wh.url, wh.segredo, 'teste', corpoTeste)
+    await auditar(env.DB, auth.admin, 'testou_webhook', { status: r.status })
+    return json({ ok: r.status >= 200 && r.status < 300, ...r })
+  }
+
   /* ---- links de cadastro ---- */
   if (r0 === 'convites') {
     if (metodo === 'GET') {

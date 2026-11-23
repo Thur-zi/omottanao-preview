@@ -40,12 +40,11 @@ function aplicar(r: Resposta) {
   MOTIVOS.splice(0, MOTIVOS.length, ...r.motivos.map((m): Motivo => ({ tag: m.tag, titulo: m.titulo, texto: m.texto, fonte: m.fonte, url: m.url ?? undefined, exemplo: !!m.exemplo })))
   PAUTAS.splice(0, PAUTAS.length, ...r.pautas.map((p) => ({ titulo: p.titulo, exemplo: !!p.exemplo })))
   const c = r.config
-  if (c.whatsapp_numero) CONFIG.whatsappNumero = c.whatsapp_numero
+  CONFIG.whatsappNumero = /^55\d{10,11}$/.test((c.whatsapp_numero || '').replace(/\D/g, '')) ? c.whatsapp_numero.replace(/\D/g, '') : ''
   CONFIG.ga4Id = c.ga4_id || null
   CONFIG.metaPixelId = c.meta_pixel_id || CONFIG.metaPixelId
-  if (c.responsavel) CONFIG.responsavel = c.responsavel
-  if (c.encarregado_nome) CONFIG.encarregado.nome = c.encarregado_nome
-  if (c.encarregado_email) CONFIG.encarregado.email = c.encarregado_email
+  if (c.responsavel && !c.responsavel.includes('[')) CONFIG.responsavel = c.responsavel
+  if (/^55\d{10,11}$/.test((c.contato_telefone || '').replace(/\D/g, ''))) CONFIG.contatoTelefone = c.contato_telefone.replace(/\D/g, '')
   CONFIG.candidatoFoto = c.candidato_foto || null // vazio = foto padrão (CANDIDATO.foto)
   CONFIG.previa = c.previa !== '0'
   CONFIG.mostrarContagem = c.mostrar_contagem === '1'

@@ -1,5 +1,6 @@
 /** POST /api/lead — assinatura do NÃO. */
 import { UFS, agora, corpo, dentroDoLimite, dispositivo, erro, ipHash, json, limpa, type Ctx } from '../../server/util'
+import { configWebhook, corpoWebhook, enviarWebhook } from '../../server/webhook'
 
 const COD_UF: Record<string, string> = {
   RO: '11', AC: '12', AM: '13', RR: '14', PA: '15', AP: '16', TO: '17', MA: '21', PI: '22', CE: '23', RN: '24', PB: '25', PE: '26', AL: '27',
@@ -20,7 +21,7 @@ type Entrada = {
   tempo?: number
 }
 
-export const onRequestPost = async ({ request, env }: Ctx) => {
+export const onRequestPost = async ({ request, env, waitUntil }: Ctx) => {
   const b = await corpo<Entrada>(request, 8000)
   if (!b) return erro('formato')
   // armadilha para robôs: campo invisível preenchido ou envio rápido demais
@@ -46,6 +47,8 @@ export const onRequestPost = async ({ request, env }: Ctx) => {
   if (!(await dentroDoLimite(db, 'lead:global', 3000, 60))) return erro('limite', 429)
 
   const o = b.origem || {}
+  const aceite = agora()
+  const versao = limpa(b.consentimento?.versao, 40) || 'v1'
   const r = await db
     .prepare(
       `INSERT INTO assinaturas (id, nome, sobrenome, whatsapp, uf, cidade, cidade_ibge, aceite_em, versao_termo,
@@ -64,8 +67,8 @@ export const onRequestPost = async ({ request, env }: Ctx) => {
       uf,
       cidade,
       ibge,
-      agora(),
-      limpa(b.consentimento?.versao, 40) || 'v1',
+      aceite,
+      versao,
       limpa(o.utm_source, 80) || null,
       limpa(o.utm_medium, 80) || null,
       limpa(o.utm_campaign, 120) || null,
@@ -78,5 +81,23 @@ export const onRequestPost = async ({ request, env }: Ctx) => {
       ip,
     )
     .first<{ vezes: number }>()
-  return json({ ok: true, novo: (r?.vezes ?? 1) === 1 })
+  const vezes = r?.vezes ?? 1
+  // automação do WhatsApp: avisa em segundo plano (não atrasa a resposta para a pessoa)
+  const wh = await configWebhook(db)
+  if (wh.url) {
+    const evento = vezes === 1 ? 'assinatura.nova' : 'assinatura.repetida'
+    const corpoWh = corpoWebhook(evento, {
+      nome, sobrenome, whatsapp, uf, cidade, cidade_ibge: ibge, versao_termo: versao, aceite_em: aceite, vezes,
+      origem: {
+        utm_source: limpa(o.utm_source, 80) || null,
+        utm_medium: limpa(o.utm_medium, 80) || null,
+        utm_campaign: limpa(o.utm_campaign, 120) || null,
+        utm_content: limpa(o.utm_content, 120) || null,
+        utm_term: limpa(o.utm_term, 120) || null,
+        referrer: limpa(o.referrer, 300) || null,
+      },
+    })
+    waitUntil(enviarWebhook(db, wh.url, wh.segredo, evento, corpoWh))
+  }
+  return json({ ok: true, novo: vezes === 1 })
 }
