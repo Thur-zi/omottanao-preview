@@ -69,6 +69,9 @@ function Cadastro({ token, pronto }: { token: string; pronto: (usuario: string) 
   async function enviar(ev: React.FormEvent) {
     ev.preventDefault()
     setErro('')
+    if (!f.nome.trim()) return setErro('Escreva o seu nome.')
+    if (!/^[a-z0-9._@-]{3,80}$/i.test(f.usuario.trim())) return setErro('Usuário: pelo menos 3 letras ou números, sem espaços (pode usar ponto, hífen ou e-mail).')
+    if (!f.senha) return setErro('Escolha uma senha.')
     if (f.senha !== f.confirma) return setErro('As senhas não conferem.')
     setOcupado(true)
     try {
@@ -96,10 +99,11 @@ function Cadastro({ token, pronto }: { token: string; pronto: (usuario: string) 
       <form onSubmit={enviar} className="space-y-3">
         <input className={entrada} placeholder="Seu nome" autoComplete="name" value={f.nome} onChange={set('nome')} autoFocus />
         <input className={entrada} placeholder="Usuário (ex.: ana.souza)" autoComplete="username" autoCapitalize="none" value={f.usuario} onChange={set('usuario')} />
-        <input className={entrada} type="password" placeholder="Senha (mín. 10 caracteres)" autoComplete="new-password" value={f.senha} onChange={set('senha')} />
+        <input className={entrada} type="password" placeholder="Senha" autoComplete="new-password" value={f.senha} onChange={set('senha')} />
         <input className={entrada} type="password" placeholder="Repita a senha" autoComplete="new-password" value={f.confirma} onChange={set('confirma')} />
+        {f.confirma.length > 0 && f.confirma !== f.senha && <p className="-mt-1 text-[12.5px] font-semibold text-vermelho">As senhas ainda não conferem</p>}
         {erro && <Aviso>{erro}</Aviso>}
-        <button disabled={ocupado || !f.nome || !f.usuario || f.senha.length < 10 || !f.confirma} className="btn-azul h-12 w-full text-[16px] disabled:opacity-60">
+        <button disabled={ocupado} className="btn-azul h-12 w-full text-[16px] disabled:opacity-60">
           {ocupado ? 'Criando…' : 'Criar meu acesso'}
         </button>
       </form>

@@ -175,8 +175,8 @@ export function AbaConfig() {
         <Cartao titulo="Minha senha">
           <form onSubmit={trocarSenha} className="space-y-3">
             <input className={entrada} type="password" placeholder="Senha atual" autoComplete="current-password" value={senha.atual} onChange={(e) => setSenha({ ...senha, atual: e.target.value })} />
-            <input className={entrada} type="password" placeholder="Nova senha (10+ caracteres)" autoComplete="new-password" value={senha.nova} onChange={(e) => setSenha({ ...senha, nova: e.target.value })} />
-            <Botao type="submit" variante="linha" disabled={!senha.atual || senha.nova.length < 10}>
+            <input className={entrada} type="password" placeholder="Nova senha" autoComplete="new-password" value={senha.nova} onChange={(e) => setSenha({ ...senha, nova: e.target.value })} />
+            <Botao type="submit" variante="linha" disabled={!senha.atual || !senha.nova}>
               Trocar senha
             </Botao>
           </form>
@@ -269,7 +269,7 @@ function ListaEquipe() {
             <Campo rotulo="Nome">
               <input className={entrada} value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} />
             </Campo>
-            <Campo rotulo="Senha provisória" dica="Mínimo de 10 caracteres. Passe por um canal seguro; a pessoa troca depois.">
+            <Campo rotulo="Senha provisória" dica="Passe por um canal seguro; a pessoa troca depois.">
               <input className={entrada} value={novo.senha} onChange={(e) => setNovo({ ...novo, senha: e.target.value })} />
             </Campo>
             {erro && <Aviso>{erro}</Aviso>}

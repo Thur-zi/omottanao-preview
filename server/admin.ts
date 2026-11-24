@@ -89,7 +89,7 @@ async function conviteAberto(req: Request, env: Env, token: string, metodo: stri
   const senha = typeof b?.senha === 'string' ? b.senha : ''
   if (!nome) return erro('Diga seu nome.')
   if (!/^[a-z0-9._@-]{3,80}$/.test(usuario)) return erro('Usuário: letras, números, ponto, hífen ou e-mail.')
-  if (senha.length < 10) return erro('Senha com pelo menos 10 caracteres.')
+  if (!senha) return erro('Escolha uma senha.')
   // reserva o convite primeiro (uso único, mesmo com dois cliques ao mesmo tempo)
   const reserva = await env.DB.prepare(`UPDATE convites SET usado_em = ?1, usado_por = ?2 WHERE id = ?3 AND usado_em IS NULL AND expira_em > ?1`).bind(agora(), usuario, c.id).run()
   if (!reserva.meta.changes) return erro('Este link de cadastro expirou ou já foi usado.', 410)
@@ -513,7 +513,7 @@ export async function rotaAdmin(ctx: Ctx): Promise<Response> {
       const usuario = limpa(b?.usuario, 80).toLowerCase()
       const senha = typeof b?.senha === 'string' ? b.senha : ''
       if (!/^[a-z0-9._@-]{3,80}$/.test(usuario)) return erro('Usuário: letras, números, ponto, hífen ou e-mail.')
-      if (senha.length < 10) return erro('Senha com pelo menos 10 caracteres.')
+      if (!senha) return erro('Escolha uma senha.')
       const sal = aleatorio(16)
       try {
         await env.DB.prepare(`INSERT INTO admins (usuario, nome, senha_hash, senha_sal) VALUES (?, ?, ?, ?)`).bind(usuario, limpa(b?.nome, 80), await hashSenha(senha, sal), sal).run()
@@ -586,7 +586,7 @@ export async function rotaAdmin(ctx: Ctx): Promise<Response> {
   if (r0 === 'senha' && metodo === 'POST') {
     const b = await corpo<{ atual?: string; nova?: string }>(req, 2000)
     if (!iguais(await hashSenha(String(b?.atual ?? ''), auth.admin.senha_sal), auth.admin.senha_hash)) return erro('Senha atual incorreta.', 401)
-    if (String(b?.nova ?? '').length < 10) return erro('A nova senha precisa de pelo menos 10 caracteres.')
+    if (!String(b?.nova ?? '')) return erro('Escolha a nova senha.')
     const sal = aleatorio(16)
     await env.DB.prepare(`UPDATE admins SET senha_hash = ?, senha_sal = ? WHERE id = ?`).bind(await hashSenha(String(b!.nova), sal), sal, auth.admin.id).run()
     await auditar(env.DB, auth.admin, 'trocou_senha')
