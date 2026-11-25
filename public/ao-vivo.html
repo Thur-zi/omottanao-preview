@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Contador ao vivo · O Motta Não.</title>
+<!--
+  Contador de assinaturas para a tela da live (OBS, vMix, Streamyard: "fonte de navegador").
+  Parâmetros (todos opcionais):
+    estilo=bloco | faixa                 formato (padrão: bloco)
+    fundo=transparente | verde | azul | vermelho | preto   (padrão: transparente)
+    escala=1.2                           aumenta/diminui tudo
+    texto=Assinaturas%20por%20coerência  troca a legenda
+    demo=1                               simula assinaturas chegando (para ensaio)
+-->
+<style>
+  @font-face { font-family: 'Archivo OMN'; src: url('/fontes/archivo.woff2') format('woff2'); font-weight: 100 900; font-stretch: 62% 125%; font-display: block; }
+  @font-face { font-family: 'Inter OMN'; src: url('/fontes/inter-tight.woff2') format('woff2'); font-weight: 100 900; font-display: block; }
+  :root { --azul: #1f4fe0; --azul-vivo: #3d7bff; --navy: #040b26; --vermelho: #c61f1f; --escala: 1; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+  body { display: grid; place-items: center; font-family: 'Inter OMN', system-ui, sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+  body.fundo-verde { background: #00b140; }
+  body.fundo-azul { background: var(--navy); }
+  body.fundo-vermelho { background: var(--vermelho); }
+  body.fundo-preto { background: #000; }
+  .tit { font-family: 'Archivo OMN', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-stretch: 66%; text-transform: uppercase; letter-spacing: -0.01em; line-height: 0.85; }
+  .marca { font-family: 'Archivo OMN', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-stretch: 70%; text-transform: uppercase; white-space: nowrap; }
+  .marca span { background: var(--azul); padding: 0 0.14em; margin-left: 0.18em; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- BLOCO: cartão central ---------- */
+  .bloco { transform: scale(var(--escala)); transform-origin: center; width: 760px; border-radius: 34px; overflow: hidden;
+    background: linear-gradient(160deg, #0e2e9a 0%, #081a52 55%, #040b26 100%); box-shadow: 0 40px 90px -30px rgba(0,0,0,.75), inset 0 0 0 2px rgba(255,255,255,.08); }
+  .bloco .topo { display: flex; align-items: center; justify-content: space-between; padding: 26px 36px 0; }
+  .bloco .rotulo { font-size: 17px; font-weight: 800; letter-spacing: .24em; text-transform: uppercase; color: #a9c1ff; display: flex; align-items: center; gap: 12px; }
+  .bloco .rotulo i { width: 12px; height: 12px; border-radius: 50%; background: #ff3b3b; box-shadow: 0 0 0 0 rgba(255,59,59,.7); animation: aoar 1.6s infinite; }
+  .bloco .marca { font-size: 30px; }
+  .bloco .centro { position: relative; padding: 6px 36px 4px; }
+  .bloco .numero { font-size: 200px; color: #fff; text-shadow: 0 10px 40px rgba(31,79,224,.55); }
+  .bloco .legenda { font-size: 30px; font-weight: 700; color: rgba(255,255,255,.85); padding: 0 36px; }
+  .bloco .rodape { margin-top: 22px; padding: 16px 36px; background: var(--azul); display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: 800; }
+  .bloco .rodape b { font-family: 'Archivo OMN', sans-serif; font-weight: 900; font-stretch: 75%; font-size: 30px; text-transform: uppercase; letter-spacing: .01em; }
+
+  /* ---------- FAIXA: terço inferior ---------- */
+  body.estilo-faixa { place-items: end center; padding-bottom: calc(5vh / var(--escala)); }
+  .faixa { position: relative; transform: scale(var(--escala)); transform-origin: bottom center; display: flex; align-items: stretch; border-radius: 22px;
+    box-shadow: 0 26px 60px -24px rgba(0,0,0,.8); }
+  .faixa .a { position: relative; background: var(--navy); border-radius: 22px 0 0 22px; display: flex; align-items: center; gap: 22px; padding: 14px 30px 14px 24px; }
+  .faixa .ponto { width: 14px; height: 14px; border-radius: 50%; background: #ff3b3b; animation: aoar 1.6s infinite; }
+  .faixa .numero { font-size: 96px; }
+  .faixa .txt { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+  .faixa .legenda { font-size: 26px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+  .faixa .site { font-size: 19px; font-weight: 700; color: #a9c1ff; }
+  .faixa .b { background: var(--azul); border-radius: 0 22px 22px 0; display: flex; align-items: center; padding: 0 30px; }
+  .faixa .marca { font-size: 44px; }
+  .faixa .marca span { background: #fff; color: var(--azul); }
+
+  /* ---------- "+N" a cada assinatura nova ---------- */
+  .mais { position: absolute; right: 40px; top: 10px; font-family: 'Archivo OMN', sans-serif; font-weight: 900; font-stretch: 75%;
+    font-size: 44px; color: #fff; background: #25d366; border-radius: 999px; padding: 4px 18px 0; opacity: 0; transform: translateY(16px) scale(.8); pointer-events: none; }
+  .mais.on { animation: mais 1.8s cubic-bezier(.22,1,.36,1) forwards; }
+  .faixa .mais { top: -30px; right: auto; left: 70px; font-size: 34px; }
+  .pulso { animation: pulso .6s cubic-bezier(.22,1,.36,1); }
+  @keyframes mais { 0% { opacity: 0; transform: translateY(16px) scale(.8); } 15% { opacity: 1; transform: translateY(0) scale(1); } 75% { opacity: 1; transform: translateY(-6px) scale(1); } 100% { opacity: 0; transform: translateY(-26px) scale(.95); } }
+  @keyframes pulso { 0% { transform: scale(1); } 35% { transform: scale(1.06); } 100% { transform: scale(1); } }
+  @keyframes aoar { 0% { box-shadow: 0 0 0 0 rgba(255,59,59,.7); } 70% { box-shadow: 0 0 0 12px rgba(255,59,59,0); } 100% { box-shadow: 0 0 0 0 rgba(255,59,59,0); } }
+  .oculto { display: none !important; }
+</style>
+</head>
+<body>
+  <!-- BLOCO -->
+  <div class="bloco" id="bloco">
+    <div class="topo">
+      <div class="rotulo"><i></i>Ao vivo</div>
+      <div class="marca">O Motta<span>Não.</span></div>
+    </div>
+    <div class="centro">
+      <div class="tit num numero" data-numero>0</div>
+      <div class="mais" data-mais>+1</div>
+    </div>
+    <div class="legenda" data-legenda>assinaturas pedindo coerência</div>
+    <div class="rodape"><b>Eu quero coerência</b><span>omottanao.com.br</span></div>
+  </div>
+
+  <!-- FAIXA -->
+  <div class="faixa oculto" id="faixa">
+    <div class="a">
+      <div class="ponto"></div>
+      <div class="tit num numero" data-numero>0</div>
+      <div class="txt">
+        <div class="legenda" data-legenda>assinaturas pedindo coerência</div>
+        <div class="site">Assine em omottanao.com.br</div>
+      </div>
+      <div class="mais" data-mais>+1</div>
+    </div>
+    <div class="b"><div class="marca">O Motta<span>Não.</span></div></div>
+  </div>
+
+<script>
+(function () {
+  var p = new URLSearchParams(location.search)
+  var estilo = p.get('estilo') === 'faixa' ? 'faixa' : 'bloco'
+  var fundo = (p.get('fundo') || 'transparente').toLowerCase()
+  var escala = parseFloat(p.get('escala') || '1') || 1
+  var demo = p.get('demo') === '1'
+  if (fundo !== 'transparente') document.body.classList.add('fundo-' + fundo)
+  document.body.classList.add('estilo-' + estilo)
+  document.documentElement.style.setProperty('--escala', String(Math.min(4, Math.max(0.3, escala))))
+  document.getElementById(estilo === 'faixa' ? 'bloco' : 'faixa').classList.add('oculto')
+  var raiz = document.getElementById(estilo)
+  raiz.classList.remove('oculto')
+  var elNum = raiz.querySelector('[data-numero]')
+  var elMais = raiz.querySelector('[data-mais]')
+  if (p.get('texto')) raiz.querySelectorAll('[data-legenda]').forEach(function (e) { e.textContent = p.get('texto') })
+
+  var fmt = new Intl.NumberFormat('pt-BR')
+  var mostrado = null
+  var alvo = null
+  var anim = 0
+
+  function desenhar(v) { elNum.textContent = fmt.format(Math.round(v)) }
+
+  // sobe o número suavemente até o valor novo
+  function animarAte(novo) {
+    if (mostrado === null) { mostrado = novo; desenhar(novo); return }
+    var de = mostrado, t0 = performance.now(), dur = Math.min(2200, 700 + (novo - de) * 25)
+    cancelAnimationFrame(anim)
+    function passo(t) {
+      var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3)
+      mostrado = de + (novo - de) * e
+      desenhar(mostrado)
+      if (k < 1) anim = requestAnimationFrame(passo)
+      else mostrado = novo
+    }
+    anim = requestAnimationFrame(passo)
+  }
+
+  function chegou(total) {
+    if (typeof total !== 'number' || !isFinite(total)) return
+    if (alvo !== null && total > alvo) {
+      var dif = total - alvo
+      elMais.textContent = '+' + fmt.format(dif)
+      elMais.classList.remove('on'); void elMais.offsetWidth; elMais.classList.add('on')
+      elNum.classList.remove('pulso'); void elNum.offsetWidth; elNum.classList.add('pulso')
+    }
+    if (alvo === null || total !== alvo) { alvo = total; animarAte(total) }
+  }
+
+  function buscar() {
+    fetch('/api/contador?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null })
+      .then(function (d) { if (d) chegou(d.total) })
+      .catch(function () { /* mantém o último número */ })
+  }
+
+  if (demo) {
+    var v = 1042
+    chegou(v)
+    setInterval(function () { v += 1 + Math.floor(Math.random() * 3); chegou(v) }, 2600)
+  } else {
+    buscar()
+    setInterval(buscar, 3000)
+  }
+})()
+</script>
+</body>
+</html>
